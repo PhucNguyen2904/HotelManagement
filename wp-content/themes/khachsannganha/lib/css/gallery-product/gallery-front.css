@@ -1,0 +1,135 @@
+.slick-prev:before,
+.slick-next:before,
+a.dev3b-popup{
+    transition: all 0.3s linear 0s; 
+    -webkit-transition: all 0.3s linear 0s;
+    -moz-transition: all 0.3s linear 0s;
+    -o-transition: all 0.3s linear 0s;
+}
+.dev3b-slider-nav img{
+    cursor:pointer;
+}
+a.dev3b-popup {
+    bottom: 15px;
+    font-size: 25px;
+    line-height: 0;
+    opacity: 0.6;
+    padding: 12px 0;
+    position: absolute;
+    right: 15px;
+    z-index: 9;
+    color:#444;
+}
+a.dev3b-popup:hover{
+    opacity: 1;
+    color:#444;
+}
+.dev3b-slider-nav img{
+    opacity:.9;
+}
+.dev3b-slider-nav .slick-current img,
+.dev3b-slider-nav img:hover{
+    opacity:1;
+}
+.dev3b-slider-for .zoom img:first-child{
+    display:none!important;
+}
+.dev3b-slider-for  .zoomImg {
+    cursor: default;
+}
+/* WooCommerce Css */
+.admin-bar .fancybox-container {
+    z-index: 999999;
+}
+.single-product.woocommerce span.onsale{
+    z-index:9;
+}
+.dev3b-slider-for.slick-slider {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+.dev3b-slider-for .slick-slide {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+#dev3b-gallery.slick-slider {
+    margin-left: -10px !important;
+    margin-right: -10px !important;
+}
+#dev3b-gallery .slick-slide {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+}
+#dev3b-gallery .slick-slide img {
+    border: 1px solid #ddd;
+    opacity: 0.5;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transition: opacity 0.6s;
+}
+#dev3b-gallery .slick-slide.slick-current img,
+#dev3b-gallery .slick-slide:hover img {
+    border-color: rgba(0,0,0,0.3);
+    opacity: 1;
+}
+#dev3b-gallery .slick-arrow {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-out;
+}
+#dev3b-gallery:hover .slick-arrow {
+    opacity: 1;
+    visibility: visible;
+}
+/* Gallery Vertical */
+.gallery-horizontal #dev3b-gallery:hover .slick-prev {
+    left: 10px;
+}
+.gallery-horizontal #dev3b-gallery:hover .slick-next {
+    right: 10px;
+}
+/* Gallery Vertical */
+.gallery-vertical {
+    clear: both;
+}
+.gallery-vertical .dev3b-slider-for {
+    float: right;
+    width: calc( 100% - 20% - 10px );
+}
+.gallery-vertical #dev3b-gallery {
+    float: left;
+    width: 20%;
+    margin-left: 0;
+    margin-right: 0;
+}
+.gallery-vertical #dev3b-gallery .slick-slide {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-bottom: 10px;
+}
+.gallery-vertical #dev3b-gallery.slick-slider .slick-prev,
+.gallery-vertical #dev3b-gallery.slick-slider .slick-next {
+	left: 50%;
+	right: 50%;
+}
+.gallery-vertical #dev3b-gallery.slick-slider .slick-prev {
+	top: 0;
+	transform: translate(-50%,0);
+}
+.gallery-vertical #dev3b-gallery.slick-slider .slick-next {
+	bottom: 0;
+	top: initial;
+	transform: translate(-50%,-50%);
+}
+.gallery-vertical #dev3b-gallery:hover .slick-prev {
+    top: 10px;
+}
+.gallery-vertical #dev3b-gallery:hover .slick-next {
+    bottom: 10px;
+}
+.gallery-vertical #dev3b-gallery.slick-slider .slick-prev:before {
+    content: "\f077";
+}
+.gallery-vertical #dev3b-gallery.slick-slider .slick-next:before {
+    content: "\f078";
+}
