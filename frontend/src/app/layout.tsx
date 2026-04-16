@@ -1,9 +1,18 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Cormorant_Garamond, Jost } from 'next/font/google';
 import './globals.css';
 import { Header, Footer } from '@/components/layout';
 
-const inter = Inter({ subsets: ['latin', 'vietnamese'] });
+const jost = Jost({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-jost',
+});
+
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-cormorant',
+  weight: ['400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   title: 'Khách Sạn Ngân Hà - Quan Lạn, Vân Đồn, Quảng Ninh',
@@ -32,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className={inter.className}>
+      <body className={`${jost.variable} ${cormorant.variable} bg-[var(--color-accent)] text-[var(--color-text)]`}>
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-1">{children}</main>

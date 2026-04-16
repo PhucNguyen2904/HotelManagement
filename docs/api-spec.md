@@ -341,8 +341,7 @@ Create new booking.
   "guestName": "Nguyen Van A",
   "guestEmail": "guest@example.com",
   "guestPhone": "0901234567",
-  "specialRequests": "Late check-in",
-  "couponCode": "SUMMER2024"
+  "specialRequests": "Late check-in"
 }
 ```
 
@@ -471,37 +470,6 @@ Create review (after checkout).
   "rating": 5,
   "title": "Tuyệt vời!",
   "comment": "Phòng sạch sẽ, nhân viên thân thiện..."
-}
-```
-
----
-
-## Coupons Module
-
-### GET /coupons/validate
-Validate coupon code.
-
-**Public**: Yes
-
-**Query**:
-| Param | Type | Description |
-|-------|------|-------------|
-| code | string | Coupon code |
-| hotelId | string | Hotel ID |
-| amount | number | Booking amount |
-| nights | number | Number of nights |
-
-**Response**: `200 OK`
-```json
-{
-  "data": {
-    "valid": true,
-    "code": "SUMMER2024",
-    "type": "PERCENTAGE",
-    "value": 10,
-    "discountAmount": 166000,
-    "message": "Giảm 10% tối đa 200,000đ"
-  }
 }
 ```
 

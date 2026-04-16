@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { roomTypesService } from '@/services/room-types.service';
 import { formatCurrency, getBedLabel, getCapacityLabel } from '@/lib/utils';
 import { ImageGallery, Button, Card, CardContent } from '@/components/ui';
-import { Users, Maximize, Bed, Check, ArrowLeft } from 'lucide-react';
+import { Users, Maximize, Bed, Check, ArrowLeft, ShieldCheck, Star } from 'lucide-react';
 import type { RoomType } from '@/types';
 
 const NGANHA_HOTEL_ID = 'hotel_nganha_001';
@@ -29,7 +29,6 @@ export default function RoomDetailPage() {
         const data = await roomTypesService.getBySlug(hotelId, slug);
         setRoom(data);
       } catch (err) {
-        console.error('Failed to fetch room:', err);
         setError('Không tìm thấy thông tin phòng');
       } finally {
         setIsLoading(false);
@@ -43,12 +42,12 @@ export default function RoomDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4" />
-          <div className="h-96 bg-gray-200 rounded mb-4" />
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
+          <div className="mb-4 h-8 w-1/4 rounded bg-manor-surface-high" />
+          <div className="mb-4 h-96 rounded bg-manor-surface-high" />
+          <div className="mb-2 h-4 w-3/4 rounded bg-manor-surface-high" />
+          <div className="h-4 w-1/2 rounded bg-manor-surface-high" />
         </div>
       </div>
     );
@@ -56,181 +55,109 @@ export default function RoomDetailPage() {
 
   if (error || !room) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {error || 'Không tìm thấy phòng'}
-          </h1>
-          <Link href="/rooms">
-            <Button>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Quay lại danh sách phòng
-            </Button>
-          </Link>
-        </div>
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 text-center">
+        <h1 className="mb-4 text-2xl">{error || 'Không tìm thấy phòng'}</h1>
+        <Link href="/rooms">
+          <Button>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Quay lại danh sách phòng
+          </Button>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <nav className="mb-6">
-          <ol className="flex items-center gap-2 text-sm text-gray-600">
-            <li>
-              <Link href="/" className="hover:text-primary-600">
-                Trang chủ
-              </Link>
-            </li>
-            <li>/</li>
-            <li>
-              <Link href="/rooms" className="hover:text-primary-600">
-                Danh sách phòng
-              </Link>
-            </li>
-            <li>/</li>
-            <li className="text-gray-900 font-medium">{room.name}</li>
-          </ol>
-        </nav>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main content - 2 columns */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Gallery */}
-            <ImageGallery images={room.images} alt={room.name} />
-
-            {/* Room Info */}
-            <Card>
-              <CardContent className="p-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">{room.name}</h1>
-
-                {/* Quick Info */}
-                <div className="flex flex-wrap gap-6 text-gray-600 mb-6 pb-6 border-b">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary-600" />
-                    <span>{getCapacityLabel(room.maxAdults, room.maxChildren)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Bed className="h-5 w-5 text-primary-600" />
-                    <span>{getBedLabel(room.bedType, room.bedCount)}</span>
-                  </div>
-                  {room.areaSize && (
-                    <div className="flex items-center gap-2">
-                      <Maximize className="h-5 w-5 text-primary-600" />
-                      <span>{room.areaSize}m²</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Description */}
-                {room.description && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Mô tả</h2>
-                    <p className="text-gray-600 leading-relaxed">{room.description}</p>
-                  </div>
-                )}
-
-                {/* Amenities */}
-                {room.amenities && room.amenities.length > 0 && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                      Tiện nghi phòng
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {room.amenities.map((amenity) => (
-                        <div
-                          key={amenity.id}
-                          className="flex items-center gap-2 text-gray-600"
-                        >
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>{amenity.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Bed Type Info Box */}
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold text-blue-900 mb-3">
-                  Thông tin giường
-                </h2>
-                <div className="flex items-center gap-4">
-                  <div className="text-4xl">
-                    {room.bedType === 'SINGLE' && '🛏️'}
-                    {room.bedType === 'TWIN' && '🛏️🛏️'}
-                    {room.bedType === 'DOUBLE' && '🛌'}
-                    {room.bedType === 'QUEEN' && '👑🛌'}
-                    {room.bedType === 'KING' && '👑🛌'}
-                  </div>
-                  <div>
-                    <p className="font-medium text-blue-900">
-                      {getBedLabel(room.bedType, room.bedCount)}
-                    </p>
-                    <p className="text-sm text-blue-700">
-                      {room.bedType === 'SINGLE' && 'Phòng đơn phù hợp cho 1 người'}
-                      {room.bedType === 'TWIN' &&
-                        'Phòng có 2 giường đơn riêng biệt, phù hợp cho bạn bè hoặc đồng nghiệp'}
-                      {room.bedType === 'DOUBLE' &&
-                        'Phòng có 1 giường đôi lớn, phù hợp cho các cặp đôi'}
-                      {room.bedType === 'QUEEN' && 'Phòng có 1 giường Queen size cao cấp'}
-                      {room.bedType === 'KING' && 'Phòng có 1 giường King size sang trọng'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+    <div className="min-h-screen bg-manor-surface pb-24 pt-28">
+      <div className="mx-auto grid w-full max-w-screen-2xl grid-cols-12 gap-16 px-8">
+        <div className="col-span-12 lg:col-span-8">
+          <div className="mb-8">
+            <Link href="/rooms" className="inline-flex items-center gap-2 text-sm text-manor-muted hover:text-manor-primary">
+              <ArrowLeft className="h-4 w-4" />
+              Danh sách phòng
+            </Link>
           </div>
 
-          {/* Sidebar - Booking Card */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
-              <Card className="shadow-lg">
-                <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <span className="text-3xl font-bold text-primary-600">
-                      {formatCurrency(room.basePrice)}
-                    </span>
-                    <span className="text-gray-500">/đêm</span>
-                  </div>
+          <div className="mb-12 overflow-hidden rounded-xl">
+            <ImageGallery images={room.images} alt={room.name} />
+          </div>
 
-                  <div className="space-y-4 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Sức chứa</span>
-                      <span className="font-medium">
-                        {getCapacityLabel(room.maxAdults, room.maxChildren)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Loại giường</span>
-                      <span className="font-medium">
-                        {getBedLabel(room.bedType, room.bedCount)}
-                      </span>
-                    </div>
-                    {room.areaSize && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Diện tích</span>
-                        <span className="font-medium">{room.areaSize}m²</span>
+          <Card className="bg-manor-surface-low p-2">
+            <CardContent className="p-8">
+              <div className="mb-6 flex flex-wrap items-center gap-8 border-b border-manor-outline/20 pb-6 text-xs uppercase tracking-widest text-manor-muted">
+                <span className="inline-flex items-center gap-2">
+                  <Maximize className="h-4 w-4 text-manor-secondary" />
+                  {room.areaSize ? `${room.areaSize}m²` : 'Luxury space'}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <Bed className="h-4 w-4 text-manor-secondary" />
+                  {getBedLabel(room.bedType, room.bedCount)}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <Users className="h-4 w-4 text-manor-secondary" />
+                  {getCapacityLabel(room.maxAdults, room.maxChildren)}
+                </span>
+              </div>
+
+              <h1 className="mb-6 text-4xl">{room.name}</h1>
+              {room.description && (
+                <p className="mb-8 max-w-3xl text-lg leading-relaxed text-manor-muted">{room.description}</p>
+              )}
+
+              {room.amenities.length > 0 && (
+                <div>
+                  <h2 className="mb-5 text-2xl">Curated Amenities</h2>
+                  <div className="grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
+                    {room.amenities.map((amenity) => (
+                      <div key={amenity.id} className="flex items-center gap-3 text-manor-primary">
+                        <Check className="h-4 w-4 text-manor-secondary" />
+                        <span>{amenity.name}</span>
                       </div>
-                    )}
+                    ))}
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-                  <Link href={`/booking?roomTypeId=${room.id}`}>
-                    <Button className="w-full" size="lg">
-                      Đặt phòng ngay
-                    </Button>
-                  </Link>
+        <div className="col-span-12 lg:col-span-4">
+          <div className="sticky top-32">
+            <Card className="rounded-xl border border-manor-outline/20 bg-manor-surface-lowest">
+              <CardContent className="p-8">
+                <div className="mb-8 flex items-baseline justify-between">
+                  <span className="text-3xl">{formatCurrency(room.basePrice)}</span>
+                  <span className="text-sm text-manor-muted">/đêm</span>
+                </div>
 
-                  <p className="text-xs text-gray-500 text-center mt-4">
-                    Giá chưa bao gồm thuế và phí dịch vụ
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+                <div className="mb-8 space-y-3 border-b border-manor-outline/20 pb-8 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-manor-muted">Sức chứa</span>
+                    <span>{getCapacityLabel(room.maxAdults, room.maxChildren)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-manor-muted">Loại giường</span>
+                    <span>{getBedLabel(room.bedType, room.bedCount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-manor-muted">Điểm nổi bật</span>
+                    <span className="inline-flex items-center gap-1 text-manor-secondary">
+                      <Star className="h-4 w-4" />
+                      Signature
+                    </span>
+                  </div>
+                </div>
+
+                <Link href={`/booking?roomTypeId=${room.id}`}>
+                  <Button className="w-full py-4">Reserve Suite</Button>
+                </Link>
+
+                <div className="mt-5 flex items-center justify-center gap-2 text-xs uppercase tracking-wider text-manor-muted">
+                  <ShieldCheck className="h-4 w-4 text-manor-secondary" />
+                  Secure booking
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { PrismaClientInitializationError } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../prisma';
 import { CreateRoomTypeDto, UpdateRoomTypeDto } from './dto/room-type.dto';
 import { BedType } from '@prisma/client';
@@ -90,6 +91,125 @@ export class RoomTypesService {
       },
       orderBy: { sortOrder: 'asc' },
     });
+  }
+
+  async findPublicByHotel(
+    hotelId: string,
+    query: { checkIn?: string; checkOut?: string; adults?: number },
+  ) {
+    const { checkIn, checkOut, adults } = query;
+
+    if (checkIn && checkOut) {
+      const startDate = new Date(checkIn);
+      const endDate = new Date(checkOut);
+      if (startDate >= endDate) {
+        throw new BadRequestException('checkOut must be after checkIn');
+      }
+    }
+
+    try {
+      const roomTypes = await this.prisma.roomType.findMany({
+        where: {
+          hotelId,
+          isActive: true,
+          ...(adults ? { maxAdults: { gte: adults } } : {}),
+        },
+        include: {
+          images: { orderBy: { sortOrder: 'asc' } },
+          _count: { select: { rooms: { where: { isActive: true } } } },
+        },
+        orderBy: { sortOrder: 'asc' },
+      });
+
+      return {
+        hotelId,
+        checkIn: checkIn ?? null,
+        checkOut: checkOut ?? null,
+        adults: adults ?? null,
+        roomTypes: roomTypes.map((roomType) => ({
+          id: roomType.id,
+          name: roomType.name,
+          slug: roomType.slug,
+          description: roomType.description,
+          basePrice: Number(roomType.basePrice),
+          maxAdults: roomType.maxAdults,
+          maxChildren: roomType.maxChildren,
+          bedType: roomType.bedType,
+          bedCount: roomType.bedCount,
+          areaSize: roomType.areaSize,
+          availableRooms: roomType._count.rooms,
+          images: roomType.images.map((image) => ({
+            url: image.url,
+            alt: image.alt,
+            isPrimary: image.isPrimary,
+          })),
+        })),
+        source: 'database',
+      };
+    } catch (error: unknown) {
+      if (
+        !(error instanceof PrismaClientInitializationError) &&
+        !(error instanceof NotFoundException)
+      ) {
+        throw error;
+      }
+    }
+
+    const mockRoomTypes = [
+      {
+        id: 'mock-single',
+        name: 'Phòng đơn',
+        slug: 'phong-don',
+        description: 'Phòng đơn ấm cúng, phù hợp cho 1 khách.',
+        basePrice: 350000,
+        maxAdults: 1,
+        maxChildren: 0,
+        bedType: BedType.SINGLE,
+        bedCount: 1,
+        areaSize: 18,
+        availableRooms: 8,
+        images: [{ url: '/images/MG_0454-300x255.jpg', alt: 'Phòng đơn', isPrimary: true }],
+      },
+      {
+        id: 'mock-twin',
+        name: 'Phòng đôi giường đơn',
+        slug: 'phong-doi-giuong-don',
+        description: 'Phòng rộng rãi với 2 giường đơn.',
+        basePrice: 450000,
+        maxAdults: 2,
+        maxChildren: 1,
+        bedType: BedType.TWIN,
+        bedCount: 2,
+        areaSize: 25,
+        availableRooms: 10,
+        images: [{ url: '/images/MG_0458-300x255.jpg', alt: 'Phòng twin', isPrimary: true }],
+      },
+      {
+        id: 'mock-double',
+        name: 'Phòng đôi giường kép',
+        slug: 'phong-doi-giuong-kep',
+        description: 'Phòng với 1 giường đôi lớn cho 2 khách.',
+        basePrice: 500000,
+        maxAdults: 2,
+        maxChildren: 1,
+        bedType: BedType.DOUBLE,
+        bedCount: 1,
+        areaSize: 28,
+        availableRooms: 8,
+        images: [{ url: '/images/MG_0478-300x255.jpg', alt: 'Phòng double', isPrimary: true }],
+      },
+    ];
+
+    return {
+      hotelId,
+      checkIn: checkIn ?? null,
+      checkOut: checkOut ?? null,
+      adults: adults ?? null,
+      roomTypes: adults
+        ? mockRoomTypes.filter((roomType) => roomType.maxAdults >= adults)
+        : mockRoomTypes,
+      source: 'mock',
+    };
   }
 
   async findOne(id: string) {

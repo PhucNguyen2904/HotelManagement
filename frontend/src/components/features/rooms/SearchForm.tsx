@@ -42,9 +42,13 @@ export function SearchForm({
   return (
     <form
       onSubmit={handleSearch}
-      className="flex flex-col md:flex-row gap-4 p-4 bg-white rounded-lg shadow-md"
+      className="grid grid-cols-1 gap-4 rounded-xl p-4 backdrop-blur-xl sm:grid-cols-2 lg:grid-cols-4"
+      style={{
+        background: 'rgba(242, 239, 233, 0.15)',
+        boxShadow: '0 20px 40px rgba(27,58,75,0.2)',
+      }}
     >
-      <div className="flex-1">
+      <div>
         <Input
           type="date"
           label="Ngày nhận phòng"
@@ -54,7 +58,7 @@ export function SearchForm({
           required
         />
       </div>
-      <div className="flex-1">
+      <div>
         <Input
           type="date"
           label="Ngày trả phòng"
@@ -64,7 +68,7 @@ export function SearchForm({
           required
         />
       </div>
-      <div className="w-full md:w-32">
+      <div>
         <Input
           type="number"
           label="Số khách"
@@ -76,8 +80,11 @@ export function SearchForm({
         />
       </div>
       <div className="flex items-end">
-        <Button type="submit" className="w-full md:w-auto">
-          Tìm phòng
+        <Button
+          type="submit"
+          className="w-full bg-[var(--color-secondary)] font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)]"
+        >
+          Check Availability
         </Button>
       </div>
     </form>

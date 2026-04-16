@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { BedDouble, Users } from 'lucide-react';
 import { ROOMS_DATA } from './image-data';
 
 function formatPrice(price: number): string {
@@ -10,28 +11,28 @@ function formatPrice(price: number): string {
 
 export function RoomGallerySection() {
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4">
+    <section className="bg-[var(--color-accent)] py-24">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        <div className="mb-12 text-center">
+          <h2 className="mb-4 text-3xl font-semibold text-[var(--color-primary)] md:text-4xl">
             Các Loại Phòng
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-lg text-[var(--color-text)]/80">
             26 phòng nghỉ với 3 loại phòng phù hợp mọi nhu cầu
           </p>
         </div>
 
-        {/* Room Grid - 1 col mobile, 3 col desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {/* Room Grid - clean lifestyle grid */}
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-3">
           {ROOMS_DATA.map((room) => (
             <Link
               key={room.id}
               href={`/rooms/${room.slug}?hotelId=hotel_nganha_001`}
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group"
+              className="group overflow-hidden rounded border border-[var(--color-secondary)]/25 bg-white transition-all duration-300 hover:shadow-md"
             >
               {/* Image container */}
-              <div className="relative h-52 overflow-hidden">
+              <div className="relative h-60 overflow-hidden">
                 <Image
                   src={room.image}
                   alt={room.name}
@@ -43,30 +44,32 @@ export function RoomGallerySection() {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                 
                 {/* Capacity badge */}
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-700">
-                  👥 {room.capacity} người
+                <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded bg-[var(--color-primary)] px-3 py-1 text-sm font-medium text-[var(--color-text-light)] backdrop-blur-sm">
+                  <Users size={14} strokeWidth={1.5} />
+                  {room.capacity} người
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-5">
-                <h3 className="font-semibold text-xl text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
+              <div className="p-6">
+                <h3 className="mb-2 text-xl font-semibold text-[var(--color-primary)] transition-colors group-hover:text-[var(--color-secondary)]">
                   {room.name}
                 </h3>
                 
                 {/* Bed info */}
-                <p className="text-sm text-gray-600 mb-1">
+                <p className="mb-1 inline-flex items-center gap-1 text-sm text-[var(--color-text)]/80">
+                  <BedDouble size={14} strokeWidth={1.5} color="#1B3A4B" />
                   {room.bedInfo}
                 </p>
                 
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="mb-4 text-sm text-[var(--color-text)]/65">
                   {room.description}
                 </p>
                 
                 <div className="flex items-center justify-between">
-                  <p className="text-primary-600 font-bold text-xl">
+                  <p className="text-xl font-semibold text-[var(--color-secondary)]">
                     {formatPrice(room.price)}
-                    <span className="text-sm font-normal text-gray-500"> VND/đêm</span>
+                    <span className="text-sm font-normal text-[var(--color-text)]/65"> VND/đêm</span>
                   </p>
                 </div>
               </div>
@@ -78,7 +81,7 @@ export function RoomGallerySection() {
         <div className="text-center mt-10">
           <Link
             href="/rooms"
-            className="inline-block bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-md hover:shadow-lg"
+            className="inline-block rounded bg-[var(--color-secondary)] px-8 py-3 font-semibold text-[var(--color-primary)] transition-colors duration-300 hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)]"
           >
             Xem tất cả phòng
           </Link>

@@ -19,10 +19,6 @@ interface BookingState {
   guestPhone: string;
   specialRequests: string;
 
-  // Coupon
-  couponCode: string;
-  discountAmount: number;
-
   // Actions
   setHotel: (hotel: Hotel) => void;
   setDates: (checkIn: string, checkOut: string) => void;
@@ -34,7 +30,6 @@ interface BookingState {
     guestPhone: string;
     specialRequests?: string;
   }) => void;
-  setCoupon: (code: string, discount: number) => void;
   reset: () => void;
 }
 
@@ -50,8 +45,6 @@ const initialState = {
   guestEmail: '',
   guestPhone: '',
   specialRequests: '',
-  couponCode: '',
-  discountAmount: 0,
 };
 
 export const useBookingStore = create<BookingState>()((set) => ({
@@ -73,9 +66,6 @@ export const useBookingStore = create<BookingState>()((set) => ({
       guestPhone: info.guestPhone,
       specialRequests: info.specialRequests || '',
     }),
-
-  setCoupon: (couponCode, discountAmount) =>
-    set({ couponCode, discountAmount }),
 
   reset: () => set(initialState),
 }));

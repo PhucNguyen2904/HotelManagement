@@ -26,7 +26,7 @@ export const ROOMS_DATA = [
     slug: 'phong-don',
     price: 350000,
     description: '1 giường đơn • 18m²',
-    bedInfo: '🛏️ 1 giường đơn',
+    bedInfo: '1 giường đơn',
     capacity: 1,
   },
   {
@@ -36,7 +36,7 @@ export const ROOMS_DATA = [
     slug: 'phong-doi-giuong-don',
     price: 450000,
     description: '2 giường đơn • 25m²',
-    bedInfo: '🛏️🛏️ 2 giường đơn',
+    bedInfo: '2 giường đơn',
     capacity: 2,
   },
   {
@@ -46,7 +46,7 @@ export const ROOMS_DATA = [
     slug: 'phong-doi-giuong-kep',
     price: 500000,
     description: '1 giường đôi • 28m²',
-    bedInfo: '🛌 1 giường đôi',
+    bedInfo: '1 giường đôi',
     capacity: 2,
   },
 ];

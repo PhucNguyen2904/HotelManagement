@@ -170,16 +170,6 @@ export interface Review {
   };
 }
 
-export interface Coupon {
-  id: string;
-  code: string;
-  type: 'PERCENTAGE' | 'FIXED_AMOUNT';
-  value: number;
-  maxDiscount?: number;
-  minNights?: number;
-  minAmount?: number;
-}
-
 // API Response types
 export interface ApiResponse<T> {
   statusCode: number;
@@ -254,15 +244,4 @@ export interface CreateBookingRequest {
   guestEmail: string;
   guestPhone: string;
   specialRequests?: string;
-  couponCode?: string;
-}
-
-// Coupon validation
-export interface CouponValidation {
-  valid: boolean;
-  code: string;
-  type: 'PERCENTAGE' | 'FIXED_AMOUNT';
-  value: number;
-  discountAmount: number;
-  message: string;
 }

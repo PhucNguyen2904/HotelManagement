@@ -90,8 +90,7 @@ backend/src/
     ├── availability/     # Room calendar
     ├── bookings/         # Booking logic
     ├── payments/         # Payment processing
-    ├── reviews/          # Guest reviews
-    └── coupons/          # Discount codes
+    └── reviews/          # Guest reviews
 ```
 
 ## Backend Modules
@@ -107,7 +106,6 @@ backend/src/
 | `bookings` | Booking CRUD, Status management |
 | `payments` | Payment processing, Refunds |
 | `reviews` | Guest reviews, Ratings |
-| `coupons` | Discount codes, Promotions |
 
 ## Key Design Decisions
 

@@ -8,7 +8,7 @@ export function HeroSection() {
   const heroImage = ABOUT_IMAGES_DATA[0]?.image || '/images/quan-lan-3.png';
 
   return (
-    <section className="relative bg-primary-900 text-white min-h-[500px]">
+    <section className="relative flex min-h-[88vh] items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -17,24 +17,32 @@ export function HeroSection() {
         }}
       />
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-900/70" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(27,58,75,0.3), rgba(27,58,75,0.6))',
+        }}
+      />
 
       {/* Content */}
-      <div className="relative container mx-auto px-4 py-24">
-        <div className="max-w-2xl">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 drop-shadow-lg">
+      <div className="relative mx-auto flex min-h-[88vh] w-full max-w-7xl flex-col justify-center px-4 text-center sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-secondary)]">
+            Est. 1924 • Coastal Heritage
+          </p>
+          <h1 className="mb-6 text-5xl leading-tight text-white md:text-7xl lg:text-8xl">
             Khách Sạn Ngân Hà
           </h1>
-          <p className="text-xl md:text-2xl mb-2 text-gray-100">
-            Đảo Quan Lạn - Vân Đồn - Quảng Ninh
-          </p>
-          <p className="text-lg mb-8 text-gray-200">
-            Nghỉ dưỡng tuyệt vời bên bãi biển trong xanh vịnh Bái Tử Long
+          <p
+            className="mb-12 font-serif text-2xl italic text-[var(--color-accent)] md:text-3xl"
+            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.22)' }}
+          >
+            Where the Manor Meets the Sea
           </p>
         </div>
 
-        {/* Search Form */}
-        <div className="mt-8 max-w-4xl">
+        {/* Floating booking widget */}
+        <div className="mx-auto w-full max-w-5xl">
           <SearchForm />
         </div>
       </div>

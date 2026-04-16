@@ -274,33 +274,33 @@ CREATE TABLE pricing_rules (
 -- -----------------------------------------------------------------------------
 -- coupons - Discount codes
 -- -----------------------------------------------------------------------------
-CREATE TABLE coupons (
-    id VARCHAR(25) PRIMARY KEY DEFAULT gen_random_uuid()::VARCHAR(25),
-    hotel_id VARCHAR(25) NOT NULL REFERENCES hotels(id) ON DELETE CASCADE,
-    code VARCHAR(50) NOT NULL,
-    name VARCHAR(255),
-    description TEXT,
-    type coupon_type NOT NULL,
-    value DECIMAL(12, 2) NOT NULL, -- 10 (%) or 100000 (VND)
-    min_nights INT,
-    min_amount DECIMAL(12, 0),
-    max_discount DECIMAL(12, 0), -- Cap for percentage type
-    max_usage INT, -- Total usage limit
-    max_usage_per_user INT DEFAULT 1,
-    used_count INT DEFAULT 0,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+-- CREATE TABLE coupons (
+--     id VARCHAR(25) PRIMARY KEY DEFAULT gen_random_uuid()::VARCHAR(25),
+--     hotel_id VARCHAR(25) NOT NULL REFERENCES hotels(id) ON DELETE CASCADE,
+--     code VARCHAR(50) NOT NULL,
+--     name VARCHAR(255),
+--     description TEXT,
+--     type coupon_type NOT NULL,
+--     value DECIMAL(12, 2) NOT NULL, -- 10 (%) or 100000 (VND)
+--     min_nights INT,
+--     min_amount DECIMAL(12, 0),
+--     max_discount DECIMAL(12, 0), -- Cap for percentage type
+--     max_usage INT, -- Total usage limit
+--     max_usage_per_user INT DEFAULT 1,
+--     used_count INT DEFAULT 0,
+--     start_date DATE NOT NULL,
+--     end_date DATE NOT NULL,
+--     is_active BOOLEAN DEFAULT TRUE,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    UNIQUE (hotel_id, code)
-);
+--     UNIQUE (hotel_id, code)
+-- );
 
--- Add FK for bookings -> coupons
-ALTER TABLE bookings 
-ADD CONSTRAINT fk_bookings_coupon 
-FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE SET NULL;
+-- -- Add FK for bookings -> coupons
+-- ALTER TABLE bookings 
+-- ADD CONSTRAINT fk_bookings_coupon 
+-- FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE SET NULL;
 
 -- -----------------------------------------------------------------------------
 -- reviews - Guest reviews

@@ -72,9 +72,4 @@ export class CreateBookingDto {
   @IsOptional()
   @IsString()
   specialRequests?: string;
-
-  @ApiPropertyOptional({ example: 'SUMMER2026' })
-  @IsOptional()
-  @IsString()
-  couponCode?: string;
 }

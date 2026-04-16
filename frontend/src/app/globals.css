@@ -3,11 +3,32 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
+  --color-primary: #1b3a4b;
+  --color-secondary: #c9a96e;
+  --color-accent: #f2efe9;
+  --color-text: #2c2c2c;
+  --color-text-light: #f2efe9;
+  --color-surface: #eae6df;
+  --color-overlay: rgba(27, 58, 75, 0.45);
+
+  --foreground-rgb: 44, 44, 44;
+  --background-rgb: 242, 239, 233;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
+  font-family: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-cormorant), ui-serif, Georgia, serif;
+  color: var(--color-primary);
+}
+
+.editorial-shadow {
+  box-shadow: 0 20px 40px rgba(0, 6, 19, 0.06);
 }

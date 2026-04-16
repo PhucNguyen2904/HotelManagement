@@ -6,10 +6,12 @@ import {
   Delete,
   Param,
   Body,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { RoomTypesService } from './room-types.service';
 import { CreateRoomTypeDto, UpdateRoomTypeDto } from './dto/room-type.dto';
+import { RoomTypeQueryDto } from './dto/room-type-query.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 
@@ -28,9 +30,12 @@ export class RoomTypesController {
 
   @Get()
   @Public()
-  @ApiOperation({ summary: 'Get all room types for a hotel' })
-  findAll(@Param('hotelId') hotelId: string) {
-    return this.roomTypesService.findAllByHotel(hotelId);
+  @ApiOperation({ summary: 'Get all room types for a hotel (public search)' })
+  @ApiQuery({ name: 'checkIn', required: false, example: '2026-04-16' })
+  @ApiQuery({ name: 'checkOut', required: false, example: '2026-04-17' })
+  @ApiQuery({ name: 'adults', required: false, type: Number, example: 2 })
+  findAll(@Param('hotelId') hotelId: string, @Query() query: RoomTypeQueryDto) {
+    return this.roomTypesService.findPublicByHotel(hotelId, query);
   }
 
   @Get('by-slug/:slug')

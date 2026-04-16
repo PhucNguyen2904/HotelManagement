@@ -10,7 +10,11 @@ export interface RoomTypesQuery {
 
 export const roomTypesService = {
   async getAll(query: RoomTypesQuery): Promise<RoomType[]> {
-    const response = await api.get<ApiResponse<RoomType[]>>(
+    const response = await api.get<
+      ApiResponse<
+        RoomType[] | { roomTypes?: RoomType[] }
+      >
+    >(
       `/hotels/${query.hotelId}/room-types`,
       {
         params: {
@@ -20,7 +24,10 @@ export const roomTypesService = {
         },
       },
     );
-    return response.data.data;
+    const payload = response.data.data;
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.roomTypes)) return payload.roomTypes;
+    return [];
   },
 
   async getById(hotelId: string, id: string): Promise<RoomType> {
