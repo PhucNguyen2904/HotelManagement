@@ -1,17 +1,29 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useAuthStore } from '@/stores/authStore';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import React, { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { useAuthStore } from '@/stores/authStore'
+import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
+import { UserRole } from '@/types'
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, isLoading } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (error) setError('');
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (error) setError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +31,24 @@ export function LoginForm() {
 
     try {
       await login(email, password);
+
+      // If user came from a protected route, honor that redirect first.
+      const redirectPath = searchParams.get('redirect');
+      if (redirectPath) {
+        router.push(redirectPath);
+        return;
+      }
+
+      const currentUser = useAuthStore.getState().user;
+      if (
+        currentUser?.role === UserRole.SUPER_ADMIN ||
+        currentUser?.role === UserRole.HOTEL_ADMIN ||
+        currentUser?.role === UserRole.STAFF
+      ) {
+        router.push('/admin');
+        return;
+      }
+
       router.push('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
@@ -42,7 +72,7 @@ export function LoginForm() {
             type="email"
             label="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
             placeholder="email@example.com"
             required
           />
@@ -51,7 +81,7 @@ export function LoginForm() {
             type="password"
             label="Mật khẩu"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handlePasswordChange}
             placeholder="••••••••"
             required
           />

@@ -44,9 +44,6 @@ CREATE TYPE pricing_type AS ENUM ('BASE', 'WEEKEND', 'SEASONAL', 'HOLIDAY', 'PRO
 -- Bed types
 CREATE TYPE bed_type AS ENUM ('SINGLE', 'DOUBLE', 'TWIN', 'QUEEN', 'KING');
 
--- Coupon discount types
-CREATE TYPE coupon_type AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT');
-
 -- ============================================================================
 -- 3. CORE TABLES
 -- ============================================================================
@@ -184,11 +181,7 @@ CREATE TABLE bookings (
     tax_amount DECIMAL(12, 0) DEFAULT 0,
     discount_amount DECIMAL(12, 0) DEFAULT 0,
     total_amount DECIMAL(12, 0) DEFAULT 0, -- Final amount
-    
-    -- Coupon reference
-    coupon_id VARCHAR(25),
-    coupon_code VARCHAR(50),
-    
+
     -- Guest info (can differ from user)
     guest_name VARCHAR(255),
     guest_email VARCHAR(255),
@@ -270,37 +263,6 @@ CREATE TABLE pricing_rules (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- -----------------------------------------------------------------------------
--- coupons - Discount codes
--- -----------------------------------------------------------------------------
--- CREATE TABLE coupons (
---     id VARCHAR(25) PRIMARY KEY DEFAULT gen_random_uuid()::VARCHAR(25),
---     hotel_id VARCHAR(25) NOT NULL REFERENCES hotels(id) ON DELETE CASCADE,
---     code VARCHAR(50) NOT NULL,
---     name VARCHAR(255),
---     description TEXT,
---     type coupon_type NOT NULL,
---     value DECIMAL(12, 2) NOT NULL, -- 10 (%) or 100000 (VND)
---     min_nights INT,
---     min_amount DECIMAL(12, 0),
---     max_discount DECIMAL(12, 0), -- Cap for percentage type
---     max_usage INT, -- Total usage limit
---     max_usage_per_user INT DEFAULT 1,
---     used_count INT DEFAULT 0,
---     start_date DATE NOT NULL,
---     end_date DATE NOT NULL,
---     is_active BOOLEAN DEFAULT TRUE,
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
---     UNIQUE (hotel_id, code)
--- );
-
--- -- Add FK for bookings -> coupons
--- ALTER TABLE bookings 
--- ADD CONSTRAINT fk_bookings_coupon 
--- FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE SET NULL;
 
 -- -----------------------------------------------------------------------------
 -- reviews - Guest reviews
@@ -437,12 +399,6 @@ CREATE INDEX idx_pricing_rules_room_type ON pricing_rules(room_type_id);
 CREATE INDEX idx_pricing_rules_dates ON pricing_rules(start_date, end_date);
 CREATE INDEX idx_pricing_rules_active ON pricing_rules(is_active) WHERE is_active = TRUE;
 
--- Coupons
-CREATE INDEX idx_coupons_hotel ON coupons(hotel_id);
-CREATE INDEX idx_coupons_code ON coupons(code);
-CREATE INDEX idx_coupons_dates ON coupons(start_date, end_date);
-CREATE INDEX idx_coupons_active ON coupons(is_active) WHERE is_active = TRUE;
-
 -- Reviews
 CREATE INDEX idx_reviews_user ON reviews(user_id);
 CREATE INDEX idx_reviews_hotel ON reviews(hotel_id);
@@ -498,9 +454,6 @@ CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_pricing_rules_updated_at BEFORE UPDATE ON pricing_rules
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_coupons_updated_at BEFORE UPDATE ON coupons
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON reviews
@@ -844,62 +797,6 @@ INSERT INTO pricing_rules (id, room_type_id, name, type, price, start_date, end_
 
 -- Update days_of_week for weekend pricing (5=Friday, 6=Saturday, 0=Sunday)
 UPDATE pricing_rules SET days_of_week = ARRAY[5, 6, 0] WHERE type = 'WEEKEND';
-
--- -----------------------------------------------------------------------------
--- 8.6 COUPONS - Mã giảm giá mẫu
--- -----------------------------------------------------------------------------
-INSERT INTO coupons (
-    id, hotel_id, code, name, description, type, value,
-    min_nights, min_amount, max_discount, max_usage, start_date, end_date, is_active
-) VALUES
-    (
-        'coupon_welcome',
-        'hotel_nganha_001',
-        'WELCOME10',
-        'Chào mừng khách mới',
-        'Giảm 10% cho khách đặt phòng lần đầu',
-        'PERCENTAGE',
-        10,
-        1,
-        NULL,
-        200000, -- Tối đa giảm 200k
-        100,
-        '2026-01-01',
-        '2026-12-31',
-        TRUE
-    ),
-    (
-        'coupon_summer',
-        'hotel_nganha_001',
-        'SUMMER2026',
-        'Khuyến mãi mùa hè',
-        'Giảm 15% cho đặt phòng mùa hè từ 3 đêm trở lên',
-        'PERCENTAGE',
-        15,
-        3,
-        1500000, -- Đơn tối thiểu 1.5tr
-        500000, -- Tối đa giảm 500k
-        50,
-        '2026-05-01',
-        '2026-08-31',
-        TRUE
-    ),
-    (
-        'coupon_longstay',
-        'hotel_nganha_001',
-        'LONGSTAY500K',
-        'Ở dài ngày',
-        'Giảm 500.000đ cho đặt phòng từ 5 đêm',
-        'FIXED_AMOUNT',
-        500000,
-        5,
-        2000000,
-        NULL,
-        30,
-        '2026-01-01',
-        '2026-12-31',
-        TRUE
-    );
 
 -- -----------------------------------------------------------------------------
 -- 8.7 SAMPLE BOOKING (Booking mẫu)

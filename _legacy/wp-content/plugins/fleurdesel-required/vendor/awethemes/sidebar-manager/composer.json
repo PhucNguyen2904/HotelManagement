@@ -1,9 +1,0 @@
-{
-  "name": "awethemes/sidebar-manager",
-  "require": {
-    "php": ">=5.3.9"
-  },
-  "autoload": {
-    "files": [ "create-sidebar.php" ]
-  }
-}

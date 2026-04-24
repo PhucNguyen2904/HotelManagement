@@ -34,20 +34,22 @@ export class AvailabilityService {
     // Get all room types for this hotel
     const roomTypes = await this.prisma.roomType.findMany({
       where: { hotelId, isActive: true },
-      include: {
-        rooms: { where: { isActive: true, status: 'AVAILABLE' } },
-        images: { where: { isPrimary: true }, take: 1 },
-        amenities: { include: { amenity: true } },
-      },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
 
     const result: any[] = [];
 
     for (const roomType of roomTypes) {
+      const rooms = await this.prisma.room.findMany({
+        where: {
+          roomTypeId: roomType.id,
+          isActive: true,
+          status: 'AVAILABLE',
+        },
+      });
       const availableRooms: any[] = [];
 
-      for (const room of roomType.rooms) {
+      for (const room of rooms) {
         // Check if this room has any bookings for the date range
         const bookedDays = await this.prisma.roomAvailability.count({
           where: {
@@ -78,11 +80,13 @@ export class AvailabilityService {
             maxChildren: roomType.maxChildren,
             bedType: roomType.bedType,
             areaSize: roomType.areaSize,
-            image: roomType.images[0] || null,
-            amenities: roomType.amenities.map((a) => a.amenity),
+            image: Array.isArray(roomType.images)
+              ? roomType.images.find((image: any) => image?.is_primary) ?? roomType.images[0] ?? null
+              : null,
+            amenities: Array.isArray(roomType.amenities) ? roomType.amenities : [],
           },
           availableCount: availableRooms.length,
-          totalRooms: roomType.rooms.length,
+          totalRooms: rooms.length,
           rooms: availableRooms,
           pricing: {
             pricePerNight: Number(roomType.basePrice),

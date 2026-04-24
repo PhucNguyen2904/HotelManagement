@@ -3,6 +3,30 @@
 import Image from 'next/image';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
+const TEAM_MEMBERS = [
+  {
+    name: 'Nguyễn Minh Anh',
+    role: 'Quản lý khách sạn',
+    bio: 'Tối ưu trải nghiệm lưu trú từ check-in đến check-out, tập trung vào sự chỉn chu và hài lòng của khách hàng.',
+    image:
+      'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Trần Hoàng Nam',
+    role: 'Chăm sóc khách hàng',
+    bio: 'Luôn lắng nghe và hỗ trợ nhanh chóng, giúp mọi nhu cầu của khách được xử lý mượt mà, rõ ràng và thân thiện.',
+    image:
+      'https://images.unsplash.com/photo-1550525811-e5869dd03032?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    name: 'Lê Thu Hà',
+    role: 'Điều phối dịch vụ',
+    bio: 'Phối hợp đội ngũ buồng phòng và dịch vụ để đảm bảo tiêu chuẩn sạch đẹp, tiện nghi và sẵn sàng mỗi ngày.',
+    image:
+      'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80',
+  },
+] as const;
+
 
 
 export function TeamSection() {
@@ -44,6 +68,12 @@ export function TeamSection() {
           <p className="mt-6 text-base leading-relaxed text-manor-muted sm:text-lg">
             Chúng tôi cam kết phục vụ với <span className="font-semibold">chính tâm</span>, <span className="font-semibold">tôn trọng</span> và <span className="font-semibold">chất lượng</span>. Những giá trị này là nền tảng của mọi quyết định và hành động mà chúng tôi thực hiện hàng ngày để mang đến cho quý khách một trải nghiệm đáng nhớ tại Ngân Hà Hotel.
           </p>
+        </div>
+
+        <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {TEAM_MEMBERS.map((member, index) => (
+            <TeamCard key={member.name} member={member} index={index} />
+          ))}
         </div>
       </div>
     </section>

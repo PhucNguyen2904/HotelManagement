@@ -16,10 +16,29 @@ export interface BookingsQuery {
 
 export const bookingsService = {
   async getAll(query?: BookingsQuery): Promise<PaginatedResponse<Booking>> {
-    const response = await api.get<PaginatedResponse<Booking>>('/bookings', {
-      params: query,
-    });
-    return response.data;
+    try {
+      const response = await api.get<ApiResponse<PaginatedResponse<Booking>>>(
+        '/bookings/my',
+        {
+          params: query,
+        }
+      );
+      return response.data.data;
+    } catch (error: any) {
+      // Treat missing endpoint/user-without-bookings scenarios as empty state.
+      if (error?.response?.status === 404) {
+        return {
+          data: [],
+          meta: {
+            total: 0,
+            page: query?.page ?? 1,
+            limit: query?.limit ?? 10,
+            totalPages: 0,
+          },
+        };
+      }
+      throw error;
+    }
   },
 
   async getById(id: string): Promise<Booking> {

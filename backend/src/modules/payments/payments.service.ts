@@ -17,7 +17,7 @@ export class PaymentsService {
 
     if (!booking) throw new NotFoundException('Booking not found');
 
-    if (['CANCELLED', 'REFUNDED'].includes(booking.status)) {
+    if (['CANCELLED', 'REFUNDED'].includes(booking.status || '')) {
       throw new BadRequestException('Cannot add payment to this booking');
     }
 

@@ -45,14 +45,19 @@ export class BookingsService {
     return this.prisma.$transaction(
       async (tx) => {
         // 1. Verify all rooms exist and belong to the hotel
+        const hotelRoomTypes = await tx.roomType.findMany({
+          where: { hotelId: dto.hotelId, isActive: true },
+          select: { id: true, basePrice: true, name: true },
+        });
+        const roomTypeMap = new Map(
+          hotelRoomTypes.map((roomType) => [roomType.id, roomType]),
+        );
+
         const rooms = await tx.room.findMany({
           where: {
             id: { in: dto.rooms.map((r) => r.roomId) },
             isActive: true,
-            roomType: { hotelId: dto.hotelId },
-          },
-          include: {
-            roomType: { select: { basePrice: true, name: true } },
+            roomTypeId: { in: hotelRoomTypes.map((roomType) => roomType.id) },
           },
         });
 
@@ -79,11 +84,8 @@ export class BookingsService {
           }
         }
 
-        // 3. Get tax rate
-        const taxRate = await tx.taxRate.findFirst({
-          where: { hotelId: dto.hotelId, isDefault: true, isActive: true },
-        });
-        const taxPercent = taxRate ? Number(taxRate.rate) : 10;
+        // 3. Get tax rate (default to 10%)
+        const taxPercent = 10;
 
         // 4. Calculate pricing
         let subtotal = 0;
@@ -97,7 +99,11 @@ export class BookingsService {
 
         for (const roomReq of dto.rooms) {
           const room = rooms.find((r) => r.id === roomReq.roomId)!;
-          const pricePerNight = Number(room.roomType.basePrice);
+          const roomType = roomTypeMap.get(room.roomTypeId);
+          if (!roomType) {
+            throw new NotFoundException('Room type not found for selected room');
+          }
+          const pricePerNight = Number(roomType.basePrice);
           // TODO: Apply PricingRules (seasonal, weekend, etc.)
           const totalPrice = pricePerNight * totalNights;
           subtotal += totalPrice;
@@ -151,8 +157,6 @@ export class BookingsService {
             checkOut,
             pricePerNight: br.pricePerNight,
             totalPrice: br.totalPrice,
-            adults: br.adults,
-            children: br.children,
           })),
         });
 
@@ -201,27 +205,17 @@ export class BookingsService {
         where,
         skip,
         take: limit,
-        include: {
-          user: { select: { fullName: true, email: true } },
-          bookingRooms: {
-            include: {
-              room: {
-                select: {
-                  roomNumber: true,
-                  roomType: { select: { name: true } },
-                },
-              },
-            },
-          },
-          _count: { select: { payments: true } },
-        },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.booking.count({ where }),
     ]);
 
+    const enriched = await Promise.all(
+      bookings.map((booking) => this.findOne(booking.id)),
+    );
+
     return {
-      data: bookings,
+      data: enriched,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -230,46 +224,67 @@ export class BookingsService {
     const prisma = tx || this.prisma;
     const booking = await prisma.booking.findUnique({
       where: { id },
-      include: {
-        user: {
-          select: { id: true, fullName: true, email: true, phone: true },
-        },
-        hotel: { select: { id: true, name: true, slug: true } },
-        bookingRooms: {
-          include: {
-            room: {
-              include: {
-                roomType: { select: { id: true, name: true } },
-              },
-            },
-          },
-        },
-        payments: { orderBy: { createdAt: 'desc' } },
-        review: true,
-      },
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
-    return booking;
+
+    const [user, hotel, bookingRooms, payments] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: booking.userId },
+        select: { id: true, fullName: true, email: true, phone: true },
+      }),
+      prisma.hotel.findUnique({
+        where: { id: booking.hotelId },
+        select: { id: true, name: true, slug: true },
+      }),
+      prisma.bookingRoom.findMany({
+        where: { bookingId: booking.id },
+      }),
+      prisma.payment.findMany({
+        where: { bookingId: booking.id },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const rooms = await prisma.room.findMany({
+      where: { id: { in: bookingRooms.map((br: any) => br.roomId) } },
+    });
+    const roomTypeIds = [...new Set(rooms.map((room: any) => room.roomTypeId))];
+    const roomTypes = await prisma.roomType.findMany({
+      where: { id: { in: roomTypeIds } },
+      select: { id: true, name: true },
+    });
+    const roomMap = new Map(rooms.map((room: any) => [room.id, room]));
+    const roomTypeMap = new Map(roomTypes.map((roomType: any) => [roomType.id, roomType]));
+
+    return {
+      ...booking,
+      user,
+      hotel,
+      bookingRooms: bookingRooms.map((bookingRoom: any) => {
+        const room = roomMap.get(bookingRoom.roomId) as any;
+        return {
+          ...bookingRoom,
+          room: room
+            ? {
+                ...room,
+                roomType: roomTypeMap.get(room.roomTypeId) ?? null,
+              }
+            : null,
+        };
+      }),
+      payments,
+      _count: { payments: payments.length },
+    };
   }
 
   async findByCode(code: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { bookingCode: code },
-      include: {
-        hotel: { select: { name: true } },
-        bookingRooms: {
-          include: {
-            room: {
-              include: { roomType: { select: { name: true } } },
-            },
-          },
-        },
-      },
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
-    return booking;
+    return this.findOne(booking.id);
   }
 
   async findByUser(userId: string, page = 1, limit = 10) {
@@ -279,26 +294,17 @@ export class BookingsService {
         where: { userId },
         skip,
         take: limit,
-        include: {
-          hotel: { select: { name: true } },
-          bookingRooms: {
-            include: {
-              room: {
-                select: {
-                  roomNumber: true,
-                  roomType: { select: { name: true } },
-                },
-              },
-            },
-          },
-        },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.booking.count({ where: { userId } }),
     ]);
 
+    const enriched = await Promise.all(
+      bookings.map((booking) => this.findOne(booking.id)),
+    );
+
     return {
-      data: bookings,
+      data: enriched,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -358,7 +364,7 @@ export class BookingsService {
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
-        cancelReason: reason,
+        cancellation_reason: reason,
       },
     });
   }

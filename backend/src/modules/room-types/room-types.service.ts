@@ -77,20 +77,20 @@ export class RoomTypesService {
   }
 
   async findAllByHotel(hotelId: string) {
-    return this.prisma.roomType.findMany({
+    const roomTypes = await this.prisma.roomType.findMany({
       where: { hotelId, isActive: true },
-      include: {
-        images: { orderBy: { sortOrder: 'asc' } },
-        amenities: { include: { amenity: true } },
-        _count: {
-          select: {
-            rooms: { where: { isActive: true } },
-            reviews: { where: { isVisible: true } },
-          },
-        },
-      },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
+
+    return Promise.all(
+      roomTypes.map(async (roomType) => ({
+        ...roomType,
+        _count: {
+          rooms: await this.prisma.room.count({ where: { roomTypeId: roomType.id } }),
+          reviews: await this.prisma.review.count({ where: { roomTypeId: roomType.id } }),
+        },
+      })),
+    );
   }
 
   async findPublicByHotel(
@@ -114,12 +114,18 @@ export class RoomTypesService {
           isActive: true,
           ...(adults ? { maxAdults: { gte: adults } } : {}),
         },
-        include: {
-          images: { orderBy: { sortOrder: 'asc' } },
-          _count: { select: { rooms: { where: { isActive: true } } } },
-        },
-        orderBy: { sortOrder: 'asc' },
+        orderBy: { createdAt: 'asc' },
       });
+
+      const availableRoomsEntries = await Promise.all(
+        roomTypes.map(async (roomType) => [
+          roomType.id,
+          await this.prisma.room.count({
+            where: { roomTypeId: roomType.id, isActive: true },
+          }),
+        ] as const),
+      );
+      const availableRoomsMap = new Map(availableRoomsEntries);
 
       return {
         hotelId,
@@ -137,12 +143,14 @@ export class RoomTypesService {
           bedType: roomType.bedType,
           bedCount: roomType.bedCount,
           areaSize: roomType.areaSize,
-          availableRooms: roomType._count.rooms,
-          images: roomType.images.map((image) => ({
-            url: image.url,
-            alt: image.alt,
-            isPrimary: image.isPrimary,
-          })),
+          availableRooms: availableRoomsMap.get(roomType.id) ?? 0,
+          images: Array.isArray(roomType.images)
+            ? roomType.images.map((image: any) => ({
+                url: image?.url ?? null,
+                alt: image?.alt_text ?? null,
+                isPrimary: Boolean(image?.is_primary),
+              }))
+            : [],
         })),
         source: 'database',
       };
@@ -215,69 +223,105 @@ export class RoomTypesService {
   async findOne(id: string) {
     const roomType = await this.prisma.roomType.findUnique({
       where: { id },
-      include: {
-        hotel: { select: { id: true, name: true, slug: true } },
-        images: { orderBy: { sortOrder: 'asc' } },
-        amenities: { include: { amenity: true } },
-        rooms: {
-          where: { isActive: true },
-          select: { id: true, roomNumber: true, floor: true, status: true },
-          orderBy: { roomNumber: 'asc' },
-        },
-        pricing: {
-          where: { isActive: true },
-          orderBy: { priority: 'desc' },
-        },
-        reviews: {
-          where: { isVisible: true },
-          include: {
-            user: { select: { fullName: true } },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-      },
     });
 
     if (!roomType) throw new NotFoundException('Room type not found');
-    return roomType;
+    const [hotel, rooms, pricing, reviewsRaw] = await Promise.all([
+      this.prisma.hotel.findUnique({
+        where: { id: roomType.hotelId },
+        select: { id: true, name: true, slug: true },
+      }),
+      this.prisma.room.findMany({
+        where: { roomTypeId: roomType.id, isActive: true },
+        select: { id: true, roomNumber: true, floor: true, status: true },
+        orderBy: { roomNumber: 'asc' },
+      }),
+      this.prisma.pricingRule.findMany({
+        where: { roomTypeId: roomType.id, isActive: true },
+        orderBy: { priority: 'desc' },
+      }),
+      this.prisma.review.findMany({
+        where: { roomTypeId: roomType.id, isVisible: true },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ]);
+
+    const userMap = new Map(
+      (
+        await this.prisma.user.findMany({
+          where: { id: { in: reviewsRaw.map((review) => review.userId) } },
+          select: { id: true, fullName: true },
+        })
+      ).map((u) => [u.id, u.fullName]),
+    );
+
+    const reviews = reviewsRaw.map((review) => ({
+      ...review,
+      user: { fullName: userMap.get(review.userId) ?? null },
+    }));
+
+    return {
+      ...roomType,
+      hotel,
+      rooms,
+      pricing,
+      reviews,
+    };
   }
 
   async findBySlug(hotelId: string, slug: string) {
     const roomType = await this.prisma.roomType.findUnique({
       where: { hotelId_slug: { hotelId, slug } },
-      include: {
-        hotel: { select: { id: true, name: true, slug: true } },
-        images: { orderBy: { sortOrder: 'asc' } },
-        amenities: { include: { amenity: true } },
-        rooms: {
-          where: { isActive: true },
-          select: { id: true, roomNumber: true, floor: true, status: true },
-          orderBy: { roomNumber: 'asc' },
-        },
-        pricing: {
-          where: { isActive: true },
-          orderBy: { priority: 'desc' },
-        },
-        reviews: {
-          where: { isVisible: true },
-          include: {
-            user: { select: { fullName: true } },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-        _count: {
-          select: {
-            rooms: { where: { isActive: true } },
-            reviews: { where: { isVisible: true } },
-          },
-        },
-      },
     });
 
     if (!roomType) throw new NotFoundException('Room type not found');
-    return roomType;
+    const [hotel, rooms, pricing, reviewsRaw, roomCount, reviewCount] =
+      await Promise.all([
+        this.prisma.hotel.findUnique({
+          where: { id: roomType.hotelId },
+          select: { id: true, name: true, slug: true },
+        }),
+        this.prisma.room.findMany({
+          where: { roomTypeId: roomType.id, isActive: true },
+          select: { id: true, roomNumber: true, floor: true, status: true },
+          orderBy: { roomNumber: 'asc' },
+        }),
+        this.prisma.pricingRule.findMany({
+          where: { roomTypeId: roomType.id, isActive: true },
+          orderBy: { priority: 'desc' },
+        }),
+        this.prisma.review.findMany({
+          where: { roomTypeId: roomType.id, isVisible: true },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        this.prisma.room.count({ where: { roomTypeId: roomType.id } }),
+        this.prisma.review.count({ where: { roomTypeId: roomType.id } }),
+      ]);
+
+    const userMap = new Map(
+      (
+        await this.prisma.user.findMany({
+          where: { id: { in: reviewsRaw.map((review) => review.userId) } },
+          select: { id: true, fullName: true },
+        })
+      ).map((u) => [u.id, u.fullName]),
+    );
+
+    const reviews = reviewsRaw.map((review) => ({
+      ...review,
+      user: { fullName: userMap.get(review.userId) ?? null },
+    }));
+
+    return {
+      ...roomType,
+      hotel,
+      rooms,
+      pricing,
+      reviews,
+      _count: { rooms: roomCount, reviews: reviewCount },
+    };
   }
 
   async update(id: string, dto: UpdateRoomTypeDto) {

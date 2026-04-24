@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Cormorant_Garamond, Jost } from 'next/font/google';
 import './globals.css';
-import { Header, Footer } from '@/components/layout';
 
 const jost = Jost({
   subsets: ['latin', 'latin-ext'],
@@ -41,12 +40,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className={`${jost.variable} ${cormorant.variable} bg-[var(--color-accent)] text-[var(--color-text)]`}>
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
+      <body
+        className={`${jost.variable} ${cormorant.variable} bg-[var(--color-accent)] text-[var(--color-text)]`}
+      >
+        {children}
       </body>
     </html>
   );

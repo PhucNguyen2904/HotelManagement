@@ -41,17 +41,23 @@ export class UsersService {
         email: true,
         fullName: true,
         phone: true,
-        address: true,
         idNumber: true,
         role: true,
         isActive: true,
         createdAt: true,
-        _count: { select: { bookings: true, reviews: true } },
       },
     });
 
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    const [bookingCount, reviewCount] = await Promise.all([
+      this.prisma.booking.count({ where: { userId: id } }),
+      this.prisma.review.count({ where: { userId: id } }),
+    ]);
+
+    return {
+      ...user,
+      _count: { bookings: bookingCount, reviews: reviewCount },
+    };
   }
 
   async update(id: string, dto: UpdateUserDto) {

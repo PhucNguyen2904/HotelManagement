@@ -1,0 +1,13 @@
+# Playwright
+playwright-report/
+test-results/
+.playwright/
+
+# Screenshots
+screenshots/
+
+# Node modules
+node_modules/
+
+# Debug files
+*.log

@@ -36,14 +36,14 @@ export class AuthService {
       },
     });
 
-    const token = this.generateToken(user.id, user.email, user.role);
+    const token = this.generateToken(user.id, user.email!, user.role || 'GUEST');
 
     return {
       user: {
         id: user.id,
-        email: user.email,
+        email: user.email!,
         fullName: user.fullName,
-        role: user.role,
+        role: user.role || 'GUEST',
       },
       accessToken: token,
     };
@@ -76,14 +76,14 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    const token = this.generateToken(user.id, user.email, user.role);
+    const token = this.generateToken(user.id, user.email!, user.role || 'GUEST');
 
     return {
       user: {
         id: user.id,
-        email: user.email,
+        email: user.email!,
         fullName: user.fullName,
-        role: user.role,
+        role: user.role || 'GUEST',
       },
       accessToken: token,
     };

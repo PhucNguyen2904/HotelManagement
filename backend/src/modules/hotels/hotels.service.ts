@@ -11,54 +11,86 @@ export class HotelsService {
   }
 
   async findAll() {
-    return this.prisma.hotel.findMany({
+    const hotels = await this.prisma.hotel.findMany({
       where: { isActive: true },
-      include: {
-        _count: { select: { roomTypes: true, bookings: true } },
-      },
       orderBy: { createdAt: 'desc' },
     });
+
+    const enriched = await Promise.all(
+      hotels.map(async (hotel) => {
+        const [roomTypes, bookings] = await Promise.all([
+          this.prisma.roomType.count({ where: { hotelId: hotel.id } }),
+          this.prisma.booking.count({ where: { hotelId: hotel.id } }),
+        ]);
+        return {
+          ...hotel,
+          _count: { roomTypes, bookings },
+        };
+      }),
+    );
+
+    return enriched;
   }
 
   async findOne(id: string) {
     const hotel = await this.prisma.hotel.findUnique({
       where: { id },
-      include: {
-        roomTypes: {
-          where: { isActive: true },
-          include: {
-            _count: { select: { rooms: true } },
-            images: { where: { isPrimary: true }, take: 1 },
-          },
-          orderBy: { sortOrder: 'asc' },
-        },
-        taxRates: { where: { isActive: true } },
-        _count: { select: { bookings: true } },
-      },
     });
 
     if (!hotel) throw new NotFoundException('Hotel not found');
-    return hotel;
+
+    const [roomTypes, bookingCount] = await Promise.all([
+      this.prisma.roomType.findMany({
+        where: { hotelId: hotel.id, isActive: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.booking.count({ where: { hotelId: hotel.id } }),
+    ]);
+
+    const roomTypesWithCount = await Promise.all(
+      roomTypes.map(async (roomType) => ({
+        ...roomType,
+        _count: {
+          rooms: await this.prisma.room.count({ where: { roomTypeId: roomType.id } }),
+        },
+        images: Array.isArray(roomType.images)
+          ? roomType.images.filter((img: any) => img?.is_primary).slice(0, 1)
+          : [],
+      })),
+    );
+
+    return {
+      ...hotel,
+      roomTypes: roomTypesWithCount,
+      _count: { bookings: bookingCount },
+    };
   }
 
   async findBySlug(slug: string) {
     const hotel = await this.prisma.hotel.findUnique({
       where: { slug },
-      include: {
-        roomTypes: {
-          where: { isActive: true },
-          include: {
-            images: true,
-            amenities: { include: { amenity: true } },
-            _count: { select: { rooms: true } },
-          },
-          orderBy: { sortOrder: 'asc' },
-        },
-      },
     });
 
     if (!hotel) throw new NotFoundException('Hotel not found');
-    return hotel;
+
+    const roomTypes = await this.prisma.roomType.findMany({
+      where: { hotelId: hotel.id, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const roomTypesWithCount = await Promise.all(
+      roomTypes.map(async (roomType) => ({
+        ...roomType,
+        _count: {
+          rooms: await this.prisma.room.count({ where: { roomTypeId: roomType.id } }),
+        },
+      })),
+    );
+
+    return {
+      ...hotel,
+      roomTypes: roomTypesWithCount,
+    };
   }
 
   async update(id: string, dto: UpdateHotelDto) {

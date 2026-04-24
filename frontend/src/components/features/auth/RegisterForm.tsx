@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { authService } from '@/services/auth.service';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { authService } from '@/services/auth.service'
+import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 
 export function RegisterForm() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export function RegisterForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
