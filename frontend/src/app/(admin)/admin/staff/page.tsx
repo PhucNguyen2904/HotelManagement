@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Modal } from '@/components/manager';
 import { DataTable, TableColumn } from '@/components/admin';
-import { Button } from '@/components/ui';
 import { UserRole } from '@/types';
 import { formatDate, getInitials } from '@/lib/utils';
 import { usersService } from '@/services/users.service';

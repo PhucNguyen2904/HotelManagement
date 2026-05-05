@@ -212,7 +212,6 @@ describe('Hotel Booking API (E2E)', () => {
       expect(response.body).toHaveProperty('id', roomId);
       expect(response.body).toHaveProperty('roomNumber');
       expect(response.body).toHaveProperty('roomType');
-      expect(response.body).toHaveProperty('availability');
     });
 
     it('should return 404 for non-existent room', async () => {

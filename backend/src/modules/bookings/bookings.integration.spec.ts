@@ -34,7 +34,10 @@ describe('BookingsService - Integration (Database)', () => {
   });
 
   afterEach(async () => {
-    // Optional: cleanup bookings after each test
+    // Clean up child records before parent records to satisfy FK constraints.
+    await prisma.payment.deleteMany({});
+    await prisma.roomAvailability.deleteMany({});
+    await prisma.bookingRoom.deleteMany({});
     await prisma.booking.deleteMany({});
   });
 

@@ -115,6 +115,7 @@ export class RoomTypesService {
           ...(adults ? { maxAdults: { gte: adults } } : {}),
         },
         orderBy: { createdAt: 'asc' },
+        include: { images: true },
       });
 
       const availableRoomsEntries = await Promise.all(

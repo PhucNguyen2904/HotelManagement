@@ -43,6 +43,7 @@ export class HotelsService {
       this.prisma.roomType.findMany({
         where: { hotelId: hotel.id, isActive: true },
         orderBy: { createdAt: 'asc' },
+        include: { images: true },
       }),
       this.prisma.booking.count({ where: { hotelId: hotel.id } }),
     ]);

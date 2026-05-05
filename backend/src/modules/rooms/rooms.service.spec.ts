@@ -66,7 +66,7 @@ describe('RoomsService (Unit)', () => {
       expect(prismaService.room.findMany).toHaveBeenCalledWith({
         where: {
           isActive: true,
-          roomType: { hotelId: 'hotel-1' },
+          roomType: { hotel: { id: 'hotel-1' } },
         },
         include: expect.any(Object),
         orderBy: expect.any(Array),
@@ -84,29 +84,18 @@ describe('RoomsService (Unit)', () => {
 
   describe('findOne', () => {
     it('should return room with availability data', async () => {
-      const mockAvailability = [
-        { id: 'avail-1', date: new Date('2025-06-01'), status: 'AVAILABLE', price: 500000 },
-      ];
-
       prismaService.room.findUnique.mockResolvedValue({
         ...mockRoom,
         roomType: mockRoomType,
-        availability: mockAvailability,
       });
 
       const result = await service.findOne('room-1');
 
       expect(result.id).toBe('room-1');
-      expect(result.availability).toHaveLength(1);
       expect(prismaService.room.findUnique).toHaveBeenCalledWith({
         where: { id: 'room-1' },
         include: {
           roomType: true,
-          availability: {
-            where: { date: { gte: expect.any(Date) } },
-            orderBy: { date: 'asc' },
-            take: 60,
-          },
         },
       });
     });

@@ -35,6 +35,7 @@ export class AvailabilityService {
     const roomTypes = await this.prisma.roomType.findMany({
       where: { hotelId, isActive: true },
       orderBy: { createdAt: 'asc' },
+      include: { images: true, amenities: true },
     });
 
     const result: any[] = [];

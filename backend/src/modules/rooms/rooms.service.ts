@@ -17,7 +17,7 @@ export class RoomsService {
     return this.prisma.room.findMany({
       where: {
         isActive: true,
-        roomType: { hotelId },
+        roomType: { hotel: { id: hotelId } },
       },
       include: {
         roomType: { select: { id: true, name: true, basePrice: true } },
@@ -31,11 +31,6 @@ export class RoomsService {
       where: { id },
       include: {
         roomType: true,
-        availability: {
-          where: { date: { gte: new Date() } },
-          orderBy: { date: 'asc' },
-          take: 60,
-        },
       },
     });
 
