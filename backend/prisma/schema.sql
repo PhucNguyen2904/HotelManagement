@@ -64,11 +64,9 @@ CREATE TABLE hotels (
     phone VARCHAR(20),
     email VARCHAR(255),
     website VARCHAR(255),
-    star_rating INT CHECK (star_rating BETWEEN 1 AND 5),
+     star_rating INT CHECK (star_rating BETWEEN 1 AND 5),
     check_in_time VARCHAR(5) DEFAULT '14:00',
     check_out_time VARCHAR(5) DEFAULT '12:00',
-    amenities JSONB DEFAULT '[]',
-    images JSONB DEFAULT '[]',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -111,8 +109,6 @@ CREATE TABLE room_types (
     bed_type bed_type DEFAULT 'DOUBLE',
     bed_count INT DEFAULT 1,
     area_size REAL, -- Square meters
-    amenities JSONB DEFAULT '[]',
-    images JSONB DEFAULT '[]',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -289,6 +285,28 @@ CREATE TABLE reviews (
 -- ============================================================================
 -- 4. SUPPORTING TABLES
 -- ============================================================================
+
+-- -----------------------------------------------------------------------------
+-- amenities - Master list of hotel/room features
+-- -----------------------------------------------------------------------------
+CREATE TABLE amenities (
+    id VARCHAR(25) PRIMARY KEY DEFAULT gen_random_uuid()::VARCHAR(25),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    icon VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- -----------------------------------------------------------------------------
+-- room_type_amenities - Junction table for room type features
+-- -----------------------------------------------------------------------------
+CREATE TABLE room_type_amenities (
+    id VARCHAR(25) PRIMARY KEY DEFAULT gen_random_uuid()::VARCHAR(25),
+    room_type_id VARCHAR(25) NOT NULL REFERENCES room_types(id) ON DELETE CASCADE,
+    amenity_id VARCHAR(25) NOT NULL REFERENCES amenities(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (room_type_id, amenity_id)
+);
 
 -- -----------------------------------------------------------------------------
 -- hotel_images - Hotel photo gallery
@@ -569,8 +587,7 @@ GROUP BY h.id;
 -- -----------------------------------------------------------------------------
 INSERT INTO hotels (
     id, name, slug, description, address, city, province, country,
-    phone, email, star_rating, check_in_time, check_out_time,
-    amenities, is_active
+    phone, email, star_rating, check_in_time, check_out_time, is_active
 ) VALUES (
     'hotel_nganha_001',
     'Khách Sạn Ngân Hà',
@@ -585,7 +602,6 @@ INSERT INTO hotels (
     3,
     '13:00',
     '12:00',
-    '["wifi_free", "air_conditioning", "parking", "restaurant", "24h_reception", "laundry", "room_service", "sea_view", "beach_access", "tour_booking"]',
     TRUE
 );
 
@@ -597,11 +613,11 @@ INSERT INTO users (id, email, password_hash, full_name, phone, role, hotel_id, e
 VALUES 
     -- Super Admin
     (
-        'user_admin_001',
-        'admin@nganha.com',
-        '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- Admin@123
-        'Quản trị viên Ngân Hà',
-        '0912326997',
+        'user_superadmin_001',
+        'superadmin@khachsannganha.com',
+        '$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- SuperAdmin@123
+        'Super Admin',
+        '0988888888',
         'SUPER_ADMIN',
         'hotel_nganha_001',
         TRUE,
@@ -609,24 +625,12 @@ VALUES
     ),
     -- Hotel Admin
     (
-        'user_admin_002',
-        'manager@nganha.com',
-        '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-        'Quản lý Ngân Hà',
-        '0912326998',
+        'user_admin_001',
+        'admin@khachsannganha.com',
+        '$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- Admin@123
+        'Quản trị viên Ngân Hà',
+        '0912326997',
         'HOTEL_ADMIN',
-        'hotel_nganha_001',
-        TRUE,
-        TRUE
-    ),
-    -- Staff
-    (
-        'user_staff_001',
-        'staff@nganha.com',
-        '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-        'Nhân viên lễ tân',
-        '0912326999',
-        'STAFF',
         'hotel_nganha_001',
         TRUE,
         TRUE
@@ -635,7 +639,7 @@ VALUES
     (
         'user_guest_001',
         'guest@example.com',
-        '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+        '$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- Guest@123
         'Nguyễn Văn A',
         '0901234567',
         'GUEST',
@@ -645,155 +649,114 @@ VALUES
     );
 
 -- -----------------------------------------------------------------------------
--- 8.3 ROOM TYPES - Các loại phòng (dựa trên dữ liệu cũ)
--- -----------------------------------------------------------------------------
 INSERT INTO room_types (
     id, hotel_id, name, slug, description, base_price, 
-    max_adults, max_children, bed_type, bed_count, area_size,
-    amenities, is_active
+    max_adults, max_children, bed_type, bed_count, area_size, is_active
 ) VALUES 
-    -- Phòng đôi 2 giường (room_type_id: 1368 trong hệ thống cũ)
     (
-        'rt_doi_2giuong',
+        'rt_phong_don',
         'hotel_nganha_001',
-        'Phòng Đôi 2 Giường',
-        'phong-doi-2-giuong',
-        'Phòng rộng rãi với 2 giường đơn, phù hợp cho gia đình hoặc nhóm bạn. Tầm nhìn ra biển, đầy đủ tiện nghi hiện đại.',
-        500000, -- 500,000 VND/đêm (từ booking data cũ)
-        4, -- maximum_occupancy từ data cũ
-        2, -- number_children từ data cũ
-        'TWIN',
-        2,
-        35, -- area_size từ data cũ
-        '["wifi_free", "air_conditioning", "tv", "minibar", "private_bathroom", "sea_view", "balcony"]',
-        TRUE
-    ),
-    -- Phòng đơn view biển (room_type_id: 1370 trong hệ thống cũ)
-    (
-        'rt_don_seaview',
-        'hotel_nganha_001',
-        'Phòng Đơn View Biển',
-        'phong-don-view-bien',
-        'Phòng đơn ấm cúng với giường đơn, view biển tuyệt đẹp. Lý tưởng cho khách du lịch một mình hoặc cặp đôi.',
-        400000,
-        2, -- maximum_occupancy từ data cũ
+        'Phòng đơn',
+        'phong-don',
+        'Phòng đơn ấm cúng với 1 giường đơn, phù hợp cho khách đi công tác hoặc du lịch một mình.',
+        350000,
+        1,
         0,
         'SINGLE',
         1,
-        35, -- _area_size từ data cũ
-        '["wifi_free", "air_conditioning", "tv", "minibar", "private_bathroom", "sea_view"]',
+        18,
         TRUE
     ),
-    -- Phòng VIP (bổ sung)
     (
-        'rt_vip',
+        'rt_phong_twin',
         'hotel_nganha_001',
-        'Phòng VIP',
-        'phong-vip',
-        'Phòng VIP cao cấp với không gian rộng rãi, trang bị nội thất sang trọng. Tầm nhìn toàn cảnh biển Quan Lạn.',
-        800000,
+        'Phòng đôi giường đơn',
+        'phong-doi-giuong-don',
+        'Phòng rộng rãi với 2 giường đơn, phù hợp cho bạn bè hoặc đồng nghiệp đi cùng nhau.',
+        450000,
         2,
-        2,
-        'KING',
         1,
-        45,
-        '["wifi_free", "air_conditioning", "tv", "minibar", "private_bathroom", "sea_view", "balcony", "bathtub", "coffee_maker"]',
+        'TWIN',
+        2,
+        25,
         TRUE
     ),
-    -- Phòng Gia Đình (bổ sung)
     (
-        'rt_giadinh',
+        'rt_phong_double',
         'hotel_nganha_001',
-        'Phòng Gia Đình',
-        'phong-gia-dinh',
-        'Phòng lớn dành cho gia đình với 1 giường đôi và 2 giường đơn. Có phòng khách riêng biệt.',
-        1000000,
-        4,
+        'Phòng đôi giường kép',
+        'phong-doi-giuong-kep',
+        'Phòng lãng mạn với 1 giường đôi lớn, lý tưởng cho các cặp đôi hoặc vợ chồng.',
+        500000,
         2,
-        'QUEEN',
-        3,
-        55,
-        '["wifi_free", "air_conditioning", "tv", "minibar", "private_bathroom", "sea_view", "balcony", "living_room", "extra_beds"]',
+        1,
+        'DOUBLE',
+        1,
+        28,
         TRUE
     );
 
 -- -----------------------------------------------------------------------------
--- 8.4 ROOMS - Các phòng cụ thể (26 phòng đôi 2 giường từ data cũ + thêm)
+-- 8.3.1 AMENITIES DATA
+-- -----------------------------------------------------------------------------
+INSERT INTO amenities (id, name, icon) VALUES
+    ('am_wifi', 'WiFi miễn phí', 'wifi'),
+    ('am_ac', 'Điều hòa', 'ac'),
+    ('am_tv', 'TV màn hình phẳng', 'tv'),
+    ('am_minibar', 'Minibar', 'minibar'),
+    ('am_safe', 'Két an toàn', 'safe'),
+    ('am_shower', 'Vòi sen', 'shower');
+
+INSERT INTO room_type_amenities (room_type_id, amenity_id)
+SELECT rt.id, am.id FROM room_types rt, amenities am WHERE rt.is_active = TRUE;
+
+-- -----------------------------------------------------------------------------
+-- 8.4 ROOMS - Các phòng cụ thể
 -- -----------------------------------------------------------------------------
 
--- Phòng đôi 2 giường (26 phòng từ sh_awebooking_rooms)
+-- Phòng đơn (8 phòng)
 INSERT INTO rooms (id, room_type_id, room_number, floor, status, is_active) VALUES
-    ('room_d2g_101', 'rt_doi_2giuong', '101', 1, 'AVAILABLE', TRUE),
-    ('room_d2g_102', 'rt_doi_2giuong', '102', 1, 'AVAILABLE', TRUE),
-    ('room_d2g_103', 'rt_doi_2giuong', '103', 1, 'AVAILABLE', TRUE),
-    ('room_d2g_104', 'rt_doi_2giuong', '104', 1, 'AVAILABLE', TRUE),
-    ('room_d2g_105', 'rt_doi_2giuong', '105', 1, 'AVAILABLE', TRUE),
-    ('room_d2g_106', 'rt_doi_2giuong', '106', 1, 'AVAILABLE', TRUE),
-    ('room_d2g_201', 'rt_doi_2giuong', '201', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_202', 'rt_doi_2giuong', '202', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_203', 'rt_doi_2giuong', '203', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_204', 'rt_doi_2giuong', '204', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_205', 'rt_doi_2giuong', '205', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_206', 'rt_doi_2giuong', '206', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_207', 'rt_doi_2giuong', '207', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_208', 'rt_doi_2giuong', '208', 2, 'AVAILABLE', TRUE),
-    ('room_d2g_301', 'rt_doi_2giuong', '301', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_302', 'rt_doi_2giuong', '302', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_303', 'rt_doi_2giuong', '303', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_304', 'rt_doi_2giuong', '304', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_305', 'rt_doi_2giuong', '305', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_306', 'rt_doi_2giuong', '306', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_307', 'rt_doi_2giuong', '307', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_308', 'rt_doi_2giuong', '308', 3, 'AVAILABLE', TRUE),
-    ('room_d2g_401', 'rt_doi_2giuong', '401', 4, 'AVAILABLE', TRUE),
-    ('room_d2g_402', 'rt_doi_2giuong', '402', 4, 'AVAILABLE', TRUE),
-    ('room_d2g_403', 'rt_doi_2giuong', '403', 4, 'AVAILABLE', TRUE),
-    ('room_d2g_404', 'rt_doi_2giuong', '404', 4, 'AVAILABLE', TRUE);
+    ('room_s_101', 'rt_phong_don', '101', 1, 'AVAILABLE', TRUE),
+    ('room_s_102', 'rt_phong_don', '102', 1, 'AVAILABLE', TRUE),
+    ('room_s_103', 'rt_phong_don', '103', 1, 'AVAILABLE', TRUE),
+    ('room_s_104', 'rt_phong_don', '104', 1, 'AVAILABLE', TRUE),
+    ('room_s_105', 'rt_phong_don', '105', 1, 'AVAILABLE', TRUE),
+    ('room_s_106', 'rt_phong_don', '106', 1, 'AVAILABLE', TRUE),
+    ('room_s_107', 'rt_phong_don', '107', 1, 'AVAILABLE', TRUE),
+    ('room_s_108', 'rt_phong_don', '108', 1, 'AVAILABLE', TRUE);
 
--- Phòng đơn view biển (8 phòng)
+-- Phòng twin (10 phòng)
 INSERT INTO rooms (id, room_type_id, room_number, floor, status, is_active) VALUES
-    ('room_sv_107', 'rt_don_seaview', '107', 1, 'AVAILABLE', TRUE),
-    ('room_sv_108', 'rt_don_seaview', '108', 1, 'AVAILABLE', TRUE),
-    ('room_sv_209', 'rt_don_seaview', '209', 2, 'AVAILABLE', TRUE),
-    ('room_sv_210', 'rt_don_seaview', '210', 2, 'AVAILABLE', TRUE),
-    ('room_sv_309', 'rt_don_seaview', '309', 3, 'AVAILABLE', TRUE),
-    ('room_sv_310', 'rt_don_seaview', '310', 3, 'AVAILABLE', TRUE),
-    ('room_sv_405', 'rt_don_seaview', '405', 4, 'AVAILABLE', TRUE),
-    ('room_sv_406', 'rt_don_seaview', '406', 4, 'AVAILABLE', TRUE);
+    ('room_t_201', 'rt_phong_twin', '201', 2, 'AVAILABLE', TRUE),
+    ('room_t_202', 'rt_phong_twin', '202', 2, 'AVAILABLE', TRUE),
+    ('room_t_203', 'rt_phong_twin', '203', 2, 'AVAILABLE', TRUE),
+    ('room_t_204', 'rt_phong_twin', '204', 2, 'AVAILABLE', TRUE),
+    ('room_t_205', 'rt_phong_twin', '205', 2, 'AVAILABLE', TRUE),
+    ('room_t_206', 'rt_phong_twin', '206', 2, 'AVAILABLE', TRUE),
+    ('room_t_207', 'rt_phong_twin', '207', 2, 'AVAILABLE', TRUE),
+    ('room_t_208', 'rt_phong_twin', '208', 2, 'AVAILABLE', TRUE),
+    ('room_t_209', 'rt_phong_twin', '209', 2, 'AVAILABLE', TRUE),
+    ('room_t_210', 'rt_phong_twin', '210', 2, 'AVAILABLE', TRUE);
 
--- Phòng VIP (4 phòng)
+-- Phòng double (8 phòng)
 INSERT INTO rooms (id, room_type_id, room_number, floor, status, is_active) VALUES
-    ('room_vip_501', 'rt_vip', '501', 5, 'AVAILABLE', TRUE),
-    ('room_vip_502', 'rt_vip', '502', 5, 'AVAILABLE', TRUE),
-    ('room_vip_503', 'rt_vip', '503', 5, 'AVAILABLE', TRUE),
-    ('room_vip_504', 'rt_vip', '504', 5, 'AVAILABLE', TRUE);
-
--- Phòng Gia đình (2 phòng)
-INSERT INTO rooms (id, room_type_id, room_number, floor, status, is_active) VALUES
-    ('room_gd_505', 'rt_giadinh', '505', 5, 'AVAILABLE', TRUE),
-    ('room_gd_506', 'rt_giadinh', '506', 5, 'AVAILABLE', TRUE);
+    ('room_d_301', 'rt_phong_double', '301', 3, 'AVAILABLE', TRUE),
+    ('room_d_302', 'rt_phong_double', '302', 3, 'AVAILABLE', TRUE),
+    ('room_d_303', 'rt_phong_double', '303', 3, 'AVAILABLE', TRUE),
+    ('room_d_304', 'rt_phong_double', '304', 3, 'AVAILABLE', TRUE),
+    ('room_d_305', 'rt_phong_double', '305', 3, 'AVAILABLE', TRUE),
+    ('room_d_306', 'rt_phong_double', '306', 3, 'AVAILABLE', TRUE),
+    ('room_d_307', 'rt_phong_double', '307', 3, 'AVAILABLE', TRUE),
+    ('room_d_308', 'rt_phong_double', '308', 3, 'AVAILABLE', TRUE);
 
 -- -----------------------------------------------------------------------------
 -- 8.5 PRICING RULES - Bảng giá động
 -- -----------------------------------------------------------------------------
 INSERT INTO pricing_rules (id, room_type_id, name, type, price, start_date, end_date, priority, is_active) VALUES
-    -- Giá mùa cao (Hè: 1/6 - 31/8)
-    ('pr_d2g_summer', 'rt_doi_2giuong', 'Giá mùa hè', 'SEASONAL', 650000, '2026-06-01', '2026-08-31', 10, TRUE),
-    ('pr_sv_summer', 'rt_don_seaview', 'Giá mùa hè', 'SEASONAL', 520000, '2026-06-01', '2026-08-31', 10, TRUE),
-    ('pr_vip_summer', 'rt_vip', 'Giá mùa hè', 'SEASONAL', 1000000, '2026-06-01', '2026-08-31', 10, TRUE),
-    ('pr_gd_summer', 'rt_giadinh', 'Giá mùa hè', 'SEASONAL', 1300000, '2026-06-01', '2026-08-31', 10, TRUE),
-    
-    -- Giá cuối tuần (Thứ 6,7,CN)
-    ('pr_d2g_weekend', 'rt_doi_2giuong', 'Giá cuối tuần', 'WEEKEND', 600000, NULL, NULL, 5, TRUE),
-    ('pr_sv_weekend', 'rt_don_seaview', 'Giá cuối tuần', 'WEEKEND', 480000, NULL, NULL, 5, TRUE),
-    ('pr_vip_weekend', 'rt_vip', 'Giá cuối tuần', 'WEEKEND', 950000, NULL, NULL, 5, TRUE),
-    ('pr_gd_weekend', 'rt_giadinh', 'Giá cuối tuần', 'WEEKEND', 1200000, NULL, NULL, 5, TRUE),
-
-    -- Giá lễ 30/4 - 1/5
-    ('pr_d2g_holiday_apr', 'rt_doi_2giuong', 'Lễ 30/4 - 1/5', 'HOLIDAY', 750000, '2026-04-29', '2026-05-03', 20, TRUE),
-    ('pr_sv_holiday_apr', 'rt_don_seaview', 'Lễ 30/4 - 1/5', 'HOLIDAY', 600000, '2026-04-29', '2026-05-03', 20, TRUE),
-    ('pr_vip_holiday_apr', 'rt_vip', 'Lễ 30/4 - 1/5', 'HOLIDAY', 1200000, '2026-04-29', '2026-05-03', 20, TRUE),
-    ('pr_gd_holiday_apr', 'rt_giadinh', 'Lễ 30/4 - 1/5', 'HOLIDAY', 1500000, '2026-04-29', '2026-05-03', 20, TRUE);
+    -- Giá cuối tuần (+20%)
+    ('pr_don_weekend', 'rt_phong_don', 'Giá cuối tuần', 'WEEKEND', 420000, NULL, NULL, 5, TRUE),
+    ('pr_twin_weekend', 'rt_phong_twin', 'Giá cuối tuần', 'WEEKEND', 540000, NULL, NULL, 5, TRUE),
+    ('pr_double_weekend', 'rt_phong_double', 'Giá cuối tuần', 'WEEKEND', 600000, NULL, NULL, 5, TRUE);
 
 -- Update days_of_week for weekend pricing (5=Friday, 6=Saturday, 0=Sunday)
 UPDATE pricing_rules SET days_of_week = ARRAY[5, 6, 0] WHERE type = 'WEEKEND';
@@ -833,13 +796,13 @@ INSERT INTO bookings (
 
 -- Booking room
 INSERT INTO booking_rooms (id, booking_id, room_id, check_in, check_out, price_per_night, total_price)
-VALUES ('br_001', 'booking_sample_001', 'room_d2g_201', '2026-04-15', '2026-04-17', 500000, 1000000);
+VALUES ('br_001', 'booking_sample_001', 'room_t_201', '2026-04-15', '2026-04-17', 450000, 900000);
 
 -- Room availability for booked dates
 INSERT INTO room_availability (id, room_id, date, status, booking_id, price)
 VALUES 
-    ('ra_001', 'room_d2g_201', '2026-04-15', 'BOOKED', 'booking_sample_001', 500000),
-    ('ra_002', 'room_d2g_201', '2026-04-16', 'BOOKED', 'booking_sample_001', 500000);
+    ('ra_001', 'room_t_201', '2026-04-15', 'BOOKED', 'booking_sample_001', 450000),
+    ('ra_002', 'room_t_201', '2026-04-16', 'BOOKED', 'booking_sample_001', 450000);
 
 -- Payment
 INSERT INTO payments (id, booking_id, amount, method, status, transaction_ref, paid_at)
@@ -855,7 +818,7 @@ INSERT INTO reviews (
     'review_001',
     'user_guest_001',
     'booking_sample_001',
-    'rt_doi_2giuong',
+    'rt_phong_twin',
     'hotel_nganha_001',
     5,
     'Kỳ nghỉ tuyệt vời tại Quan Lạn',

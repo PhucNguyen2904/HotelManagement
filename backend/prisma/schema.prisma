@@ -22,6 +22,8 @@ model Hotel {
   starRating   Int?      @default(3) @map("star_rating")
   checkInTime  String?   @default("14:00") @map("check_in_time") @db.VarChar(5)
   checkOutTime String?   @default("12:00") @map("check_out_time") @db.VarChar(5)
+  country      String?   @default("Vietnam") @db.VarChar(100)
+  postalCode   String?   @map("postal_code") @db.VarChar(20)
   isActive     Boolean?  @default(true) @map("is_active")
   createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(3)
   updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(3)
@@ -29,6 +31,7 @@ model Hotel {
   roomTypes    RoomType[]
   bookings     Booking[]
   reviews      Review[]
+  users        User[]
 
   @@map("hotels")
 }
@@ -44,12 +47,14 @@ model User {
   address           String?    @db.VarChar(500)
   avatarUrl         String?    @map("avatar_url") @db.VarChar(500)
   role              user_role? @default(GUEST)
+  hotelId           String?    @map("hotel_id")
   isActive          Boolean?   @default(true) @map("is_active")
   emailVerified     Boolean?   @default(false) @map("email_verified")
   lastLoginAt       DateTime?  @map("last_login_at") @db.Timestamp(3)
   createdAt         DateTime?  @default(now()) @map("created_at") @db.Timestamp(3)
   updatedAt         DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(3)
 
+  hotel             Hotel?     @relation(fields: [hotelId], references: [id])
   bookings          Booking[]
   reviews           Review[]
 
