@@ -116,7 +116,7 @@ export function toManagerRoom(room: RoomWithRelations): ManagerRoom {
     floor: room.floor ?? 0,
     pricePerNight: Number(room.roomType?.basePrice ?? 0),
     status: mapRoomStatus(room.status),
-    description: room.roomType?.description ?? room.notes ?? '',
+    description: room.roomType?.description ?? '',
     amenities: [],
     image: buildPlaceholderImage(roomTypeName),
   };
@@ -139,7 +139,6 @@ export function toManagerBooking(booking: BookingWithRelations): ManagerBooking 
     status: mapBookingStatus(booking.status),
     totalAmount: Number(booking.totalAmount ?? 0),
     note: booking.specialRequests ?? undefined,
-    cancelReason: booking.cancellation_reason ?? undefined,
     createdAt: toDateString(booking.createdAt),
     bookingCode: booking.bookingCode,
     userId: booking.userId,
@@ -268,10 +267,11 @@ export function buildRevenueByDayData(bookings: ManagerBooking[], month: string)
   }));
 
   bookings.forEach((booking) => {
-    const createdAt = booking.createdAt ? new Date(booking.createdAt) : null;
-    if (!createdAt || Number.isNaN(createdAt.getTime())) return;
-    if (createdAt < start || createdAt > end) return;
-    buckets[createdAt.getUTCDate() - 1].revenue += Number(booking.totalAmount ?? 0);
+    if (booking.status !== 'checked-out') return;
+    const checkoutDate = booking.checkOut ? new Date(booking.checkOut) : null;
+    if (!checkoutDate || Number.isNaN(checkoutDate.getTime())) return;
+    if (checkoutDate < start || checkoutDate > end) return;
+    buckets[checkoutDate.getUTCDate() - 1].revenue += Number(booking.totalAmount ?? 0);
   });
 
   return buckets;
@@ -281,9 +281,10 @@ export function buildRevenueByMonthData(bookings: ManagerBooking[]) {
   const monthly = new Map<string, number>();
 
   bookings.forEach((booking) => {
-    const createdAt = booking.createdAt ? new Date(booking.createdAt) : null;
-    if (!createdAt || Number.isNaN(createdAt.getTime())) return;
-    const key = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}`;
+    if (booking.status !== 'checked-out') return;
+    const checkoutDate = booking.checkOut ? new Date(booking.checkOut) : null;
+    if (!checkoutDate || Number.isNaN(checkoutDate.getTime())) return;
+    const key = `${checkoutDate.getUTCFullYear()}-${String(checkoutDate.getUTCMonth() + 1).padStart(2, '0')}`;
     monthly.set(key, (monthly.get(key) ?? 0) + Number(booking.totalAmount ?? 0));
   });
 
@@ -350,7 +351,8 @@ export function buildFinancialRows(bookings: ManagerBooking[], from: string, to:
   const rows = new Map<string, { period: string; revenue: number; bookings: number; totalNights: number }>();
 
   bookings.forEach((booking) => {
-    const bookingDate = booking.createdAt || booking.checkIn;
+    if (booking.status !== 'checked-out') return;
+    const bookingDate = booking.checkOut;
     if (!bookingDate) return;
     if (from && bookingDate < from) return;
     if (to && bookingDate > to) return;

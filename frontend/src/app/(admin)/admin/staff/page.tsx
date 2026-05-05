@@ -156,7 +156,6 @@ export default function StaffManagementPage() {
             phone: created.phone ?? '',
             role: created.role,
             isActive: true,
-            createdAt: created.createdAt,
           },
           ...prev,
         ]);

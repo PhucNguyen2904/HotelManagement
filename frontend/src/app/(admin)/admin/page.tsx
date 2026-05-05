@@ -11,7 +11,7 @@ export default function AdminDashboardPage() {
   const todayCheckOuts = bookings.filter((booking) => booking.checkOut === today);
   const pendingBookings = bookings.filter((booking) => booking.status === 'pending');
   const todayRevenue = bookings
-    .filter((booking) => booking.checkIn === today || booking.checkOut === today)
+    .filter((booking) => booking.status === 'checked-out' && booking.checkOut === today)
     .reduce((sum, booking) => sum + booking.totalAmount, 0);
 
   return (
@@ -27,7 +27,7 @@ export default function AdminDashboardPage() {
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-3">
           <p className="text-sm text-slate-500">Doanh thu hôm nay</p>
           <p className="mt-1 text-3xl font-semibold text-slate-900">{formatCurrency(todayRevenue)}</p>
-          <p className="text-xs text-slate-500">Bao gồm booking check-in/check-out trong ngày</p>
+          <p className="text-xs text-slate-500">Chỉ tính các booking đã check-out trong ngày</p>
         </div>
       </section>
 

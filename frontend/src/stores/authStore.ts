@@ -17,7 +17,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      isLoading: false,
+      isLoading: true,
       isAuthenticated: false,
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
@@ -39,17 +39,17 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         authService.logout();
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false, isLoading: false });
       },
 
       checkAuth: async () => {
+        set({ isLoading: true });
         const token = localStorage.getItem('accessToken');
         if (!token) {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, isAuthenticated: false, isLoading: false });
           return;
         }
 
-        set({ isLoading: true });
         try {
           const user = await authService.getProfile();
           set({ user, isAuthenticated: true, isLoading: false });
@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user }),
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 );

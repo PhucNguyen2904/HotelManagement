@@ -167,11 +167,11 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 </div>
               </div>
 
-              {booking.rooms?.length > 0 && (
+              {booking.bookingRooms?.length > 0 && (
                 <div className="border-t border-gray-200 pt-4">
                   <p className="mb-3 font-semibold">Phòng được đặt</p>
                   <div className="space-y-2">
-                    {booking.rooms?.map((room) => (
+                    {booking.bookingRooms?.map((room) => (
                       <div
                         key={room.id}
                         className="flex justify-between rounded bg-gray-50 p-3 text-sm"

@@ -42,7 +42,7 @@ export default function OperationReportsPage() {
               <LineChart data={revenueByDay}>
                 <XAxis dataKey="day" stroke="#64748b" />
                 <YAxis stroke="#64748b" />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Line type="monotone" dataKey="revenue" stroke="#0f766e" strokeWidth={2.5} />
               </LineChart>
             </ResponsiveContainer>
@@ -59,7 +59,7 @@ export default function OperationReportsPage() {
                     <Cell key={item.name} fill={donutColors[index % donutColors.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `${value}%`} />
+                <Tooltip formatter={(value: any) => `${Number(value)}%`} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -73,7 +73,7 @@ export default function OperationReportsPage() {
             <BarChart data={occupancyByWeek}>
               <XAxis dataKey="week" stroke="#64748b" />
               <YAxis stroke="#64748b" />
-              <Tooltip formatter={(value: number) => `${value}%`} />
+              <Tooltip formatter={(value: any) => `${Number(value)}%`} />
               <Bar dataKey="occupancy" fill="#14b8a6" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

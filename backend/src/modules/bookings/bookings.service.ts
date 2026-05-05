@@ -44,6 +44,8 @@ export class BookingsService {
     // Use Serializable transaction to prevent overbooking
     return this.prisma.$transaction(
       async (tx) => {
+        const rooms = dto.rooms || [];
+        
         // 1. Verify all rooms exist and belong to the hotel
         const hotelRoomTypes = await tx.roomType.findMany({
           where: { hotelId: dto.hotelId, isActive: true },
@@ -63,7 +65,7 @@ export class BookingsService {
         }[] = [];
         let subtotal = 0;
 
-        for (const roomReq of dto.rooms) {
+        for (const roomReq of rooms) {
           const roomType = roomTypeMap.get(roomReq.roomTypeId);
           if (!roomType) {
             throw new NotFoundException(`Room type not found`);
@@ -127,8 +129,8 @@ export class BookingsService {
             checkIn,
             checkOut,
             totalNights,
-            adults: dto.rooms.reduce((sum, r) => sum + (r.adults || 1), 0),
-            children: dto.rooms.reduce((sum, r) => sum + (r.children || 0), 0),
+            adults: rooms.reduce((sum, r) => sum + (r.adults || 1), 0),
+            children: rooms.reduce((sum, r) => sum + (r.children || 0), 0),
             subtotal,
             taxRate: taxPercent,
             taxAmount,
@@ -260,7 +262,7 @@ export class BookingsService {
       ...booking,
       user,
       hotel,
-      rooms: bookingRooms.map((bookingRoom: any) => {
+      bookingRooms: bookingRooms.map((bookingRoom: any) => {
         const room = roomMap.get(bookingRoom.roomId) as any;
         const roomType = room ? roomTypeMap.get(room.roomTypeId) as any : null;
         return {
@@ -342,10 +344,10 @@ export class BookingsService {
     });
   }
 
-  async cancel(id: string, userId: string, reason?: string) {
+  async cancel(id: string, userId: string, role: string, reason?: string) {
     const booking = await this.findOne(id);
 
-    if (booking.userId !== userId && !['SUPER_ADMIN', 'HOTEL_ADMIN'].includes('')) {
+    if (booking.userId !== userId && !['SUPER_ADMIN', 'HOTEL_ADMIN', 'STAFF'].includes(role)) {
       throw new BadRequestException('You can only cancel your own bookings');
     }
 
@@ -369,6 +371,288 @@ export class BookingsService {
     await this.prisma.roomAvailability.deleteMany({
       where: { bookingId },
     });
+  }
+
+  /**
+   * Get available rooms for a booking
+   * - If booking has rooms: find alternative rooms of the same type
+   * - If booking has no rooms: find all available rooms for the dates
+   */
+  async getAvailableRooms(bookingId: string) {
+    const booking = await this.findOne(bookingId);
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    const checkIn = new Date(booking.checkIn);
+    const checkOut = new Date(booking.checkOut);
+
+    const dates: Date[] = [];
+    for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
+      dates.push(new Date(d));
+    }
+
+    // Get room types requested in this booking
+    const bookingRooms = await this.prisma.bookingRoom.findMany({
+      where: { bookingId: booking.id },
+    });
+
+    let roomTypesToMatch: Set<string> | null = null;
+    let roomsNeeded = 0;
+    const requiredRoomTypes: Record<string, { roomTypeId: string; roomTypeName: string; count: number }> = {};
+
+    if (bookingRooms.length > 0) {
+      // Booking already has rooms - find alternatives of the same type
+      const currentRoomIds = new Set(bookingRooms.map((br) => br.roomId));
+      const currentRooms = await this.prisma.room.findMany({
+        where: { id: { in: Array.from(currentRoomIds) } },
+        include: { roomType: { select: { id: true, name: true, basePrice: true } } },
+      });
+
+      roomTypesToMatch = new Set(
+        currentRooms.map((room) => room.roomTypeId),
+      );
+      roomsNeeded = bookingRooms.length;
+
+      for (const room of currentRooms) {
+        if (!requiredRoomTypes[room.roomTypeId]) {
+          requiredRoomTypes[room.roomTypeId] = {
+            roomTypeId: room.roomTypeId,
+            roomTypeName: room.roomType?.name || 'Unknown',
+            count: 0,
+          };
+        }
+        requiredRoomTypes[room.roomTypeId].count++;
+      }
+    }
+
+    // Find all available rooms (filtered by type if booking has rooms)
+    const availableRooms = await this.prisma.room.findMany({
+      where: {
+        ...(roomTypesToMatch && {
+          roomTypeId: { in: Array.from(roomTypesToMatch) },
+        }),
+        isActive: true,
+        roomType: {
+          hotel: { id: booking.hotelId },
+        },
+      },
+      include: {
+        roomType: { select: { id: true, name: true, basePrice: true } },
+      },
+    });
+
+    // Filter rooms that are available for the entire stay period
+    const availableForDates = await Promise.all(
+      availableRooms.map(async (room) => {
+        const conflicts = await this.prisma.roomAvailability.findMany({
+          where: {
+            roomId: room.id,
+            date: { in: dates },
+            status: { not: 'AVAILABLE' },
+          },
+        });
+
+        if (conflicts.length === 0) {
+          return {
+            id: room.id,
+            roomNumber: room.roomNumber,
+            roomTypeId: room.roomTypeId,
+            roomTypeName: room.roomType?.name || 'Unknown',
+            floor: room.floor,
+            status: room.status,
+            basePrice: Number(room.roomType?.basePrice || 0),
+          };
+        }
+        return null;
+      }),
+    );
+
+    const filteredRooms = availableForDates.filter(
+      (room) => room !== null,
+    );
+
+    return {
+      bookingId,
+      roomsNeeded: roomsNeeded || filteredRooms.length,
+      requiredRoomTypes: Object.values(requiredRoomTypes),
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      rooms: filteredRooms,
+    };
+  }
+
+  /**
+   * Assign specific rooms to a booking
+   * Validates room count, types, and availability before assigning
+   */
+  async assignRooms(bookingId: string, roomIds: string[]) {
+    const booking = await this.findOne(bookingId);
+
+    if (booking.status !== 'PENDING') {
+      throw new BadRequestException(
+        'Can only assign rooms to PENDING bookings',
+      );
+    }
+
+    // Get current booking room assignments
+    const currentBookingRooms = await this.prisma.bookingRoom.findMany({
+      where: { bookingId: booking.id },
+    });
+
+    if (currentBookingRooms.length !== roomIds.length) {
+      throw new BadRequestException(
+        `Booking requires ${currentBookingRooms.length} rooms, but ${roomIds.length} provided`,
+      );
+    }
+
+    const checkIn = new Date(booking.checkIn);
+    const checkOut = new Date(booking.checkOut);
+
+    const dates: Date[] = [];
+    for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
+      dates.push(new Date(d));
+    }
+
+    // Verify all rooms exist and have required types
+    const newRooms = await this.prisma.room.findMany({
+      where: { id: { in: roomIds } },
+      include: { roomType: true },
+    });
+
+    if (newRooms.length !== roomIds.length) {
+      throw new NotFoundException('One or more rooms not found');
+    }
+
+    // Get current room types
+    const currentRoomIds = new Set(currentBookingRooms.map((br) => br.roomId));
+    const currentRooms = await this.prisma.room.findMany({
+      where: { id: { in: Array.from(currentRoomIds) } },
+    });
+
+    // Verify room types and counts match exactly
+    const currentTypeCounts: Record<string, number> = {};
+    for (const room of currentRooms) {
+      currentTypeCounts[room.roomTypeId] = (currentTypeCounts[room.roomTypeId] || 0) + 1;
+    }
+
+    const newTypeCounts: Record<string, number> = {};
+    for (const room of newRooms) {
+      newTypeCounts[room.roomTypeId] = (newTypeCounts[room.roomTypeId] || 0) + 1;
+    }
+
+    const currentTypeKeys = Object.keys(currentTypeCounts);
+    const newTypeKeys = Object.keys(newTypeCounts);
+
+    if (currentTypeKeys.length !== newTypeKeys.length) {
+      throw new BadRequestException(
+        'New rooms must match the exact room types and quantities as originally booked',
+      );
+    }
+
+    for (const type of currentTypeKeys) {
+      if (currentTypeCounts[type] !== newTypeCounts[type]) {
+        throw new BadRequestException(
+          `Quantity mismatch for room type. Expected ${currentTypeCounts[type]}, but got ${newTypeCounts[type] || 0}`,
+        );
+      }
+    }
+
+    // Verify rooms belong to same hotel
+    const hotelId = booking.hotelId;
+    const roomsBelongToHotel = newRooms.every((room) => {
+      const roomHotelId = room.roomType?.hotelId;
+      return roomHotelId === hotelId;
+    });
+
+    if (!roomsBelongToHotel) {
+      throw new BadRequestException('All rooms must belong to the booking hotel');
+    }
+
+    // Use transaction to update atomically
+    return this.prisma.$transaction(
+      async (tx) => {
+        // Check availability for all new rooms
+        for (const roomId of roomIds) {
+          const conflicts = await tx.roomAvailability.findMany({
+            where: {
+              roomId,
+              date: { in: dates },
+              status: { not: 'AVAILABLE' },
+              bookingId: { not: booking.id }, // Exclude current booking's own availability
+            },
+          });
+
+          if (conflicts.length > 0) {
+            throw new ConflictException(
+              `Room ${roomId} is not available for the entire booking period`,
+            );
+          }
+        }
+
+        // Delete old room availability records for this booking
+        await tx.roomAvailability.deleteMany({
+          where: { bookingId: booking.id },
+        });
+
+        // Delete old booking room records
+        await tx.bookingRoom.deleteMany({
+          where: { bookingId: booking.id },
+        });
+
+        // Create new booking room records with new rooms
+        const newBookingRoomsData: Prisma.BookingRoomCreateManyInput[] = [];
+        for (const roomId of roomIds) {
+          const room = newRooms.find((r) => r.id === roomId);
+          const pricePerNight = Number(room?.roomType?.basePrice || 0);
+          const totalNights = Math.ceil(
+            (checkOut.getTime() - checkIn.getTime()) / 86400000,
+          );
+          const totalPrice = pricePerNight * totalNights;
+
+          newBookingRoomsData.push({
+            bookingId: booking.id,
+            roomId,
+            checkIn,
+            checkOut,
+            pricePerNight,
+            totalPrice,
+          });
+        }
+
+        await tx.bookingRoom.createMany({
+          data: newBookingRoomsData,
+        });
+
+        // Create new availability records
+        const availabilityData: Prisma.RoomAvailabilityCreateManyInput[] = [];
+        for (const roomId of roomIds) {
+          for (const date of dates) {
+            availabilityData.push({
+              roomId,
+              date,
+              status: 'BOOKED',
+              bookingId: booking.id,
+            });
+          }
+        }
+
+        await tx.roomAvailability.createMany({
+          data: availabilityData,
+        });
+
+        this.logger.log(
+          `Rooms reassigned for booking ${booking.bookingCode}: ${roomIds.join(', ')}`,
+        );
+
+        return this.findOne(bookingId, tx);
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        timeout: 15000,
+      },
+    );
   }
 
   private async generateBookingCode(tx: any): Promise<string> {

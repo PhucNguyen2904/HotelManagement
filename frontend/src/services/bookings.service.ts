@@ -73,7 +73,7 @@ export const bookingsService = {
   },
 
   async cancel(id: string, reason?: string): Promise<Booking> {
-    const response = await api.post<ApiResponse<Booking>>(
+    const response = await api.patch<ApiResponse<Booking>>(
       `/bookings/${id}/cancel`,
       { reason }
     );
@@ -90,6 +90,21 @@ export const bookingsService = {
   async checkOut(id: string): Promise<Booking> {
     const response = await api.patch<ApiResponse<Booking>>(
       `/bookings/${id}/check-out`
+    );
+    return response.data.data;
+  },
+
+  async getAvailableRooms(bookingId: string): Promise<any> {
+    const response = await api.get<ApiResponse<any>>(
+      `/bookings/${bookingId}/available-rooms`
+    );
+    return response.data.data;
+  },
+
+  async assignRooms(bookingId: string, roomIds: string[]): Promise<Booking> {
+    const response = await api.patch<ApiResponse<Booking>>(
+      `/bookings/${bookingId}/assign-rooms`,
+      { roomIds }
     );
     return response.data.data;
   },

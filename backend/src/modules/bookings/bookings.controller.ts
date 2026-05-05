@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
-import { CreateBookingDto } from './dto/booking.dto';
+import { CreateBookingDto, AssignRoomsDto } from './dto/booking.dto';
 import { BookingStatus } from '@prisma/client';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -83,8 +83,23 @@ export class BookingsController {
   cancel(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: string,
     @Body('reason') reason?: string,
   ) {
-    return this.bookingsService.cancel(id, userId, reason);
+    return this.bookingsService.cancel(id, userId, role, reason);
+  }
+
+  @Get(':id/available-rooms')
+  @Roles('SUPER_ADMIN', 'HOTEL_ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Get available rooms for a booking that match its criteria' })
+  getAvailableRooms(@Param('id') id: string) {
+    return this.bookingsService.getAvailableRooms(id);
+  }
+
+  @Patch(':id/assign-rooms')
+  @Roles('SUPER_ADMIN', 'HOTEL_ADMIN', 'STAFF')
+  @ApiOperation({ summary: 'Assign specific rooms to a booking' })
+  assignRooms(@Param('id') id: string, @Body() dto: AssignRoomsDto) {
+    return this.bookingsService.assignRooms(id, dto.roomIds);
   }
 }

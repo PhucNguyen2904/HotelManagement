@@ -132,7 +132,12 @@ export interface Booking {
   guestEmail: string;
   guestPhone: string;
   specialRequests?: string;
-  rooms: BookingRoom[];
+  bookingRooms: BookingRoom[];
+  createdAt?: string;
+  confirmedAt?: string | null;
+  checkedInAt?: string | null;
+  checkedOutAt?: string | null;
+  cancelledAt?: string | null;
 }
 
 export interface BookingRoom {

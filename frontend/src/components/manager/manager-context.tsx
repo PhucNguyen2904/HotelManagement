@@ -25,6 +25,7 @@ interface ManagerContextValue extends ManagerState {
   addRoom: (room: Room) => void;
   updateRoom: (room: Room) => void;
   updateRoomStatus: (roomId: string, status: RoomStatus) => void;
+  refreshData: () => Promise<void>;
 }
 
 const ManagerContext = createContext<ManagerContextValue | undefined>(undefined);
@@ -66,23 +67,23 @@ function managerReducer(state: ManagerState, action: ManagerAction): ManagerStat
 export function ManagerProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(managerReducer, { rooms: [], bookings: [] });
 
+  const loadData = async () => {
+    try {
+      const [bookingsResponse, roomsResponse] = await Promise.all([
+        bookingsService.getHotelBookings(NGANHA_HOTEL_ID, { limit: 100 }),
+        roomsService.getAllByHotel(NGANHA_HOTEL_ID),
+      ]);
+
+      const mappedRooms = roomsResponse.map((room) => toManagerRoom(room));
+      const mappedBookings = bookingsResponse.data.map((booking) => toManagerBooking(booking));
+
+      dispatch({ type: 'SET_DATA', payload: { rooms: mappedRooms, bookings: mappedBookings } });
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [bookingsResponse, roomsResponse] = await Promise.all([
-          bookingsService.getHotelBookings(NGANHA_HOTEL_ID, { limit: 100 }),
-          roomsService.getAllByHotel(NGANHA_HOTEL_ID),
-        ]);
-
-        const mappedRooms = roomsResponse.map((room) => toManagerRoom(room));
-        const mappedBookings = bookingsResponse.data.map((booking) => toManagerBooking(booking));
-
-        dispatch({ type: 'SET_DATA', payload: { rooms: mappedRooms, bookings: mappedBookings } });
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
     loadData();
   }, []);
 
@@ -99,6 +100,7 @@ export function ManagerProvider({ children }: { children: React.ReactNode }) {
             await bookingsService.updateStatus(id, apiStatus);
           }
           dispatch({ type: 'UPDATE_BOOKING_STATUS', payload: { id, status, cancelReason } });
+          await loadData();
         } catch (error) {
           console.error('Error updating booking status:', error);
           alert('Không thể cập nhật trạng thái đặt phòng');
@@ -108,6 +110,7 @@ export function ManagerProvider({ children }: { children: React.ReactNode }) {
       updateRoom: (room: Room) => dispatch({ type: 'UPDATE_ROOM', payload: room }),
       updateRoomStatus: (roomId: string, status: RoomStatus) =>
         dispatch({ type: 'UPDATE_ROOM_STATUS', payload: { roomId, status } }),
+      refreshData: loadData,
     }),
     [state]
   );

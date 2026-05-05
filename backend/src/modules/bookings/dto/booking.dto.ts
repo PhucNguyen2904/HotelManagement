@@ -48,11 +48,15 @@ export class CreateBookingDto {
   @IsDateString()
   checkOut: string;
 
-  @ApiProperty({ type: [BookingRoomDto] })
+  @ApiPropertyOptional({ 
+    type: [BookingRoomDto],
+    description: 'Rooms to assign. If empty, use getAvailableRooms to find and assign rooms later'
+  })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => BookingRoomDto)
-  rooms: BookingRoomDto[];
+  rooms?: BookingRoomDto[];
 
   @ApiPropertyOptional({ example: 'Nguyễn Văn A' })
   @IsOptional()
@@ -78,4 +82,30 @@ export class CreateBookingDto {
   @IsOptional()
   @IsString()
   specialRequests?: string;
+}
+
+export class AssignRoomsDto {
+  @ApiProperty({
+    example: ['room-cuid-1', 'room-cuid-2'],
+    description: 'Array of room IDs to assign to the booking',
+  })
+  @IsArray()
+  @IsString({ each: true })
+  roomIds: string[];
+}
+
+export class AvailableRoomsDto {
+  bookingId: string;
+  roomsNeeded: number;
+  checkIn: string;
+  checkOut: string;
+  rooms: {
+    id: string;
+    roomNumber: string;
+    roomTypeId: string;
+    roomTypeName: string;
+    floor?: number;
+    status: string;
+    basePrice: number;
+  }[];
 }

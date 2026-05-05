@@ -122,7 +122,7 @@ export default function FinancialReportsPage() {
               <BarChart data={revenueByMonthData}>
                 <XAxis dataKey="label" stroke="#64748b" />
                 <YAxis stroke="#64748b" />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Bar dataKey="revenue" fill="#1e40af" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

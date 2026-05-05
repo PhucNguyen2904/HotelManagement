@@ -19,7 +19,7 @@ async function main() {
       slug: 'khach-san-ngan-ha',
       description: 'Khách sạn Ngân Hà - Nghỉ dưỡng chất lượng',
       address: 'Quảng Ninh, Việt Nam',
-      city: 'Hạ Long',
+      city: 'Vân Đồn',
       province: 'Quảng Ninh',
       phone: '0123456789',
       email: 'info@khachsannganha.com',
