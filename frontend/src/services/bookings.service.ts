@@ -64,6 +64,14 @@ export const bookingsService = {
     return response.data.data;
   },
 
+  async updateStatus(id: string, status: string): Promise<Booking> {
+    const response = await api.patch<ApiResponse<Booking>>(
+      `/bookings/${id}/status`,
+      { status }
+    );
+    return response.data.data;
+  },
+
   async cancel(id: string, reason?: string): Promise<Booking> {
     const response = await api.post<ApiResponse<Booking>>(
       `/bookings/${id}/cancel`,

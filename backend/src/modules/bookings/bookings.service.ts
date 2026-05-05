@@ -53,42 +53,7 @@ export class BookingsService {
           hotelRoomTypes.map((roomType) => [roomType.id, roomType]),
         );
 
-        const rooms = await tx.room.findMany({
-          where: {
-            id: { in: dto.rooms.map((r) => r.roomId) },
-            isActive: true,
-            roomTypeId: { in: hotelRoomTypes.map((roomType) => roomType.id) },
-          },
-        });
-
-        if (rooms.length !== dto.rooms.length) {
-          throw new NotFoundException(
-            'One or more rooms not found or not available',
-          );
-        }
-
-        // 2. Check availability for ALL rooms × ALL dates
-        for (const room of rooms) {
-          const conflicts = await tx.roomAvailability.findMany({
-            where: {
-              roomId: room.id,
-              date: { in: dates },
-              status: { not: 'AVAILABLE' },
-            },
-          });
-
-          if (conflicts.length > 0) {
-            throw new ConflictException(
-              `Room ${room.roomNumber} is not available for the selected dates`,
-            );
-          }
-        }
-
-        // 3. Get tax rate (default to 10%)
-        const taxPercent = 10;
-
-        // 4. Calculate pricing
-        let subtotal = 0;
+        const allocatedRooms: any[] = [];
         const bookingRoomsData: {
           roomId: string;
           pricePerNight: number;
@@ -96,27 +61,56 @@ export class BookingsService {
           adults: number;
           children: number;
         }[] = [];
+        let subtotal = 0;
 
         for (const roomReq of dto.rooms) {
-          const room = rooms.find((r) => r.id === roomReq.roomId)!;
-          const roomType = roomTypeMap.get(room.roomTypeId);
+          const roomType = roomTypeMap.get(roomReq.roomTypeId);
           if (!roomType) {
-            throw new NotFoundException('Room type not found for selected room');
+            throw new NotFoundException(`Room type not found`);
           }
-          const pricePerNight = Number(roomType.basePrice);
-          // TODO: Apply PricingRules (seasonal, weekend, etc.)
-          const totalPrice = pricePerNight * totalNights;
-          subtotal += totalPrice;
 
-          bookingRoomsData.push({
-            roomId: roomReq.roomId,
-            pricePerNight,
-            totalPrice,
-            adults: roomReq.adults || 1,
-            children: roomReq.children || 0,
+          const availableRoomsOfThisType = await tx.room.findMany({
+            where: { roomTypeId: roomReq.roomTypeId, isActive: true }
           });
+
+          let roomsAssigned = 0;
+          for (const room of availableRoomsOfThisType) {
+            const conflicts = await tx.roomAvailability.findMany({
+              where: {
+                roomId: room.id,
+                date: { in: dates },
+                status: { not: 'AVAILABLE' }
+              }
+            });
+
+            if (conflicts.length === 0) {
+              allocatedRooms.push(room);
+              roomsAssigned++;
+
+              const pricePerNight = Number(roomType.basePrice);
+              const totalPrice = pricePerNight * totalNights;
+              subtotal += totalPrice;
+
+              bookingRoomsData.push({
+                roomId: room.id,
+                pricePerNight,
+                totalPrice,
+                adults: roomReq.adults || 1,
+                children: roomReq.children || 0,
+              });
+
+              if (roomsAssigned === (roomReq.quantity || 1)) {
+                break;
+              }
+            }
+          }
+
+          if (roomsAssigned < (roomReq.quantity || 1)) {
+            throw new ConflictException(`Not enough rooms available for type ${roomType.name}`);
+          }
         }
 
+        const taxPercent = 10;
         const taxAmount = Math.round(subtotal * (taxPercent / 100));
         const totalAmount = subtotal + taxAmount;
 
@@ -162,7 +156,7 @@ export class BookingsService {
 
         // 8. Block availability (UNIQUE constraint = final defense)
         const availabilityData: Prisma.RoomAvailabilityCreateManyInput[] = [];
-        for (const room of rooms) {
+        for (const room of allocatedRooms) {
           for (const date of dates) {
             availabilityData.push({
               roomId: room.id,
@@ -178,7 +172,7 @@ export class BookingsService {
         });
 
         this.logger.log(
-          `Booking ${bookingCode} created: ${rooms.length} rooms × ${totalNights} nights = ${totalAmount.toLocaleString()}đ`,
+          `Booking ${bookingCode} created: ${allocatedRooms.length} rooms × ${totalNights} nights = ${totalAmount.toLocaleString()}đ`,
         );
 
         return this.findOne(booking.id, tx);
@@ -222,8 +216,13 @@ export class BookingsService {
 
   async findOne(id: string, tx?: any) {
     const prisma = tx || this.prisma;
-    const booking = await prisma.booking.findUnique({
-      where: { id },
+    const booking = await prisma.booking.findFirst({
+      where: {
+        OR: [
+          { id },
+          { bookingCode: id },
+        ],
+      },
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
@@ -261,16 +260,13 @@ export class BookingsService {
       ...booking,
       user,
       hotel,
-      bookingRooms: bookingRooms.map((bookingRoom: any) => {
+      rooms: bookingRooms.map((bookingRoom: any) => {
         const room = roomMap.get(bookingRoom.roomId) as any;
+        const roomType = room ? roomTypeMap.get(room.roomTypeId) as any : null;
         return {
           ...bookingRoom,
-          room: room
-            ? {
-                ...room,
-                roomType: roomTypeMap.get(room.roomTypeId) ?? null,
-              }
-            : null,
+          roomNumber: room ? room.roomNumber : 'N/A',
+          roomTypeName: roomType ? roomType.name : 'Unknown',
         };
       }),
       payments,
@@ -337,11 +333,11 @@ export class BookingsService {
     if (status === 'CANCELLED') {
       updateData.cancelledAt = new Date();
       // Release availability
-      await this.releaseAvailability(id);
+      await this.releaseAvailability(booking.id);
     }
 
     return this.prisma.booking.update({
-      where: { id },
+      where: { id: booking.id },
       data: updateData,
     });
   }
@@ -357,10 +353,10 @@ export class BookingsService {
       throw new BadRequestException('Cannot cancel this booking');
     }
 
-    await this.releaseAvailability(id);
+    await this.releaseAvailability(booking.id);
 
     return this.prisma.booking.update({
-      where: { id },
+      where: { id: booking.id },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),

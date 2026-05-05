@@ -107,7 +107,7 @@ export default function RoomDetailPage() {
                 </p>
               )}
 
-              {room.amenities.length > 0 && (
+              {room.amenities?.length > 0 && (
                 <div>
                   <h2 className="mb-5 text-2xl">Curated Amenities</h2>
                   <div className="grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">

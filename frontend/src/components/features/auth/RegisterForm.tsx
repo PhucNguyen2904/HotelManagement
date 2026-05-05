@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { authService } from '@/services/auth.service'
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
+import { Eye, EyeOff } from 'lucide-react'
 
 export function RegisterForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -95,7 +98,7 @@ export function RegisterForm() {
           />
 
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             label="Mật khẩu"
             value={form.password}
@@ -103,16 +106,36 @@ export function RegisterForm() {
             placeholder="••••••••"
             required
             minLength={6}
+            endIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-gray-500 hover:text-[var(--color-primary)] focus:outline-none"
+                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
           />
 
           <Input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             name="confirmPassword"
             label="Xác nhận mật khẩu"
             value={form.confirmPassword}
             onChange={handleChange}
             placeholder="••••••••"
             required
+            endIcon={
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="text-gray-500 hover:text-[var(--color-primary)] focus:outline-none"
+                aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
           />
 
           <Button type="submit" className="w-full" isLoading={isLoading}>

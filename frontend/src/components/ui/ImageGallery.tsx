@@ -21,15 +21,15 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  const currentImage = images[selectedIndex] || images[0];
+  const currentImage = images?.[selectedIndex] || images?.[0];
 
   const handlePrevious = useCallback(() => {
-    setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  }, [images.length]);
+    setSelectedIndex((prev) => (prev === 0 ? (images?.length || 1) - 1 : prev - 1));
+  }, [images?.length]);
 
   const handleNext = useCallback(() => {
-    setSelectedIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  }, [images.length]);
+    setSelectedIndex((prev) => (prev === (images?.length || 1) - 1 ? 0 : prev + 1));
+  }, [images?.length]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

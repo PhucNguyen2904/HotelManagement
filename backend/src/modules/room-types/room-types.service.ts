@@ -224,6 +224,10 @@ export class RoomTypesService {
   async findOne(id: string) {
     const roomType = await this.prisma.roomType.findUnique({
       where: { id },
+      include: {
+        images: { orderBy: { sort_order: 'asc' } },
+        amenities: { include: { amenity: true } },
+      },
     });
 
     if (!roomType) throw new NotFoundException('Room type not found');
@@ -264,6 +268,8 @@ export class RoomTypesService {
 
     return {
       ...roomType,
+      images: roomType.images.map((img: any) => ({ id: img.id, url: img.url, isPrimary: img.is_primary })),
+      amenities: roomType.amenities.map((a: any) => a.amenity),
       hotel,
       rooms,
       pricing,
@@ -274,6 +280,10 @@ export class RoomTypesService {
   async findBySlug(hotelId: string, slug: string) {
     const roomType = await this.prisma.roomType.findUnique({
       where: { hotelId_slug: { hotelId, slug } },
+      include: {
+        images: { orderBy: { sort_order: 'asc' } },
+        amenities: { include: { amenity: true } },
+      },
     });
 
     if (!roomType) throw new NotFoundException('Room type not found');
@@ -317,6 +327,8 @@ export class RoomTypesService {
 
     return {
       ...roomType,
+      images: roomType.images.map((img: any) => ({ id: img.id, url: img.url, isPrimary: img.is_primary })),
+      amenities: roomType.amenities.map((a: any) => a.amenity),
       hotel,
       rooms,
       pricing,

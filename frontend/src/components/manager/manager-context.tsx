@@ -90,8 +90,20 @@ export function ManagerProvider({ children }: { children: React.ReactNode }) {
     () => ({
       ...state,
       addBooking: (booking: Booking) => dispatch({ type: 'ADD_BOOKING', payload: booking }),
-      updateBookingStatus: (id: string, status: BookingStatus, cancelReason?: string) =>
-        dispatch({ type: 'UPDATE_BOOKING_STATUS', payload: { id, status, cancelReason } }),
+      updateBookingStatus: async (id: string, status: BookingStatus, cancelReason?: string) => {
+        try {
+          const apiStatus = status.replace('-', '_').toUpperCase();
+          if (apiStatus === 'CANCELLED') {
+            await bookingsService.cancel(id, cancelReason);
+          } else {
+            await bookingsService.updateStatus(id, apiStatus);
+          }
+          dispatch({ type: 'UPDATE_BOOKING_STATUS', payload: { id, status, cancelReason } });
+        } catch (error) {
+          console.error('Error updating booking status:', error);
+          alert('Không thể cập nhật trạng thái đặt phòng');
+        }
+      },
       addRoom: (room: Room) => dispatch({ type: 'ADD_ROOM', payload: room }),
       updateRoom: (room: Room) => dispatch({ type: 'UPDATE_ROOM', payload: room }),
       updateRoomStatus: (roomId: string, status: RoomStatus) =>

@@ -6,14 +6,21 @@ import Link from 'next/link'
 import { useAuthStore } from '@/stores/authStore'
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
 import { UserRole } from '@/types'
+import { Eye, EyeOff } from 'lucide-react'
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isLoading } = useAuthStore();
+  const { login, logout, isLoading } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Auto-clear session when landing on login page
+  React.useEffect(() => {
+    logout();
+  }, [logout]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -78,12 +85,22 @@ export function LoginForm() {
           />
 
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             label="Mật khẩu"
             value={password}
             onChange={handlePasswordChange}
             placeholder="••••••••"
             required
+            endIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-gray-500 hover:text-[var(--color-primary)] focus:outline-none"
+                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
           />
 
           <Button type="submit" className="w-full" isLoading={isLoading}>

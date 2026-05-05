@@ -20,6 +20,11 @@ export const usersService = {
     return response.data.data;
   },
 
+  async create(data: Partial<User> & { password?: string }): Promise<User> {
+    const response = await api.post<ApiResponse<User>>('/users', data);
+    return response.data.data;
+  },
+
   async update(id: string, data: Partial<User> & { password?: string }): Promise<User> {
     const response = await api.patch<ApiResponse<User>>(`/users/${id}`, data);
     return response.data.data;

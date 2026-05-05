@@ -12,9 +12,15 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BookingRoomDto {
-  @ApiProperty({ example: 'room-cuid' })
+  @ApiProperty({ example: 'room-type-cuid' })
   @IsString()
-  roomId: string;
+  roomTypeId: string;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  quantity?: number;
 
   @ApiPropertyOptional({ example: 2 })
   @IsOptional()

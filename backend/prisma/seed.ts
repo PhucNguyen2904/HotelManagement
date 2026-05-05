@@ -45,6 +45,22 @@ async function main() {
   });
   console.log(`✅ Admin: ${admin.email}`);
 
+  // 2.5 Create Super Admin User
+  const superAdminPassword = await bcrypt.hash('SuperAdmin@123', 12);
+  const superadmin = await prisma.user.upsert({
+    where: { email: 'superadmin@khachsannganha.com' },
+    update: {},
+    create: {
+      email: 'superadmin@khachsannganha.com',
+      passwordHash: superAdminPassword,
+      fullName: 'Super Admin',
+      role: 'SUPER_ADMIN',
+      phone: '0988888888',
+      emailVerified: true,
+    },
+  });
+  console.log(`✅ Super Admin: ${superadmin.email}`);
+
   // 3. Create Guest User
   const guestPassword = await bcrypt.hash('Guest@123', 12);
   const guest = await prisma.user.upsert({
@@ -61,44 +77,32 @@ async function main() {
   });
   console.log(`✅ Guest: ${guest.email}`);
 
-  // 4. Create Tax Rate
-  const taxRate = await prisma.taxRate.upsert({
-    where: { id: 'default-vat' },
-    update: {},
-    create: {
-      id: 'default-vat',
-      hotelId: hotel.id,
-      name: 'VAT',
-      rate: 10,
-      isDefault: true,
-    },
-  });
-  console.log(`✅ Tax: ${taxRate.name} ${taxRate.rate}%`);
+  // 4. Create Amenities
+  const amenityData = [
+    { name: 'WiFi miễn phí', icon: 'wifi' },
+    { name: 'Điều hòa', icon: 'ac' },
+    { name: 'TV màn hình phẳng', icon: 'tv' },
+    { name: 'Minibar', icon: 'minibar' },
+    { name: 'Két an toàn', icon: 'safe' },
+    { name: 'Vòi sen', icon: 'shower' },
+    { name: 'Máy sấy tóc', icon: 'hairdryer' },
+    { name: 'Bãi đỗ xe', icon: 'parking' },
+    { name: 'Nhà hàng', icon: 'restaurant' },
+    { name: 'Lễ tân 24h', icon: 'reception' },
+  ];
 
-  // 5. Create Amenities
-  const amenities = await Promise.all(
-    [
-      { name: 'WiFi miễn phí', icon: 'wifi', category: 'general' },
-      { name: 'Điều hòa', icon: 'ac', category: 'room' },
-      { name: 'TV màn hình phẳng', icon: 'tv', category: 'room' },
-      { name: 'Minibar', icon: 'minibar', category: 'room' },
-      { name: 'Két an toàn', icon: 'safe', category: 'room' },
-      { name: 'Vòi sen', icon: 'shower', category: 'bathroom' },
-      { name: 'Máy sấy tóc', icon: 'hairdryer', category: 'bathroom' },
-      { name: 'Bãi đỗ xe', icon: 'parking', category: 'general' },
-      { name: 'Nhà hàng', icon: 'restaurant', category: 'general' },
-      { name: 'Lễ tân 24h', icon: 'reception', category: 'general' },
-    ].map((a) =>
-      prisma.roomAmenity.upsert({
-        where: { name: a.name },
-        update: {},
-        create: a,
-      }),
-    ),
-  );
+  const amenities: any[] = [];
+  for (const a of amenityData) {
+    const amenity = await prisma.amenity.upsert({
+      where: { name: a.name },
+      update: {},
+      create: a,
+    });
+    amenities.push(amenity);
+  }
   console.log(`✅ Amenities: ${amenities.length} items`);
 
-  // 6. Create 3 Room Types theo yêu cầu nghiệp vụ
+  // 5. Create 3 Room Types theo yêu cầu nghiệp vụ
 
   // Room images (sử dụng ảnh từ thư mục /images)
   const roomImages = [
@@ -108,7 +112,7 @@ async function main() {
     '/images/MG_0502-1-300x255.jpg',
   ];
 
-  // 6.1. Phòng đơn (Single Room) — 1 người, 1 giường đơn
+  // 5.1. Phòng đơn (Single Room) — 1 người, 1 giường đơn
   const singleRoom = await prisma.roomType.upsert({
     where: { hotelId_slug: { hotelId: hotel.id, slug: 'phong-don' } },
     update: {
@@ -136,7 +140,7 @@ async function main() {
     `✅ Room Type: ${singleRoom.name} — ${Number(singleRoom.basePrice).toLocaleString()}đ/đêm`,
   );
 
-  // 6.2. Phòng đôi giường đơn (Twin Room) — 2 người, 2 giường đơn
+  // 5.2. Phòng đôi giường đơn (Twin Room) — 2 người, 2 giường đơn
   const twinRoom = await prisma.roomType.upsert({
     where: { hotelId_slug: { hotelId: hotel.id, slug: 'phong-doi-giuong-don' } },
     update: {
@@ -164,7 +168,7 @@ async function main() {
     `✅ Room Type: ${twinRoom.name} — ${Number(twinRoom.basePrice).toLocaleString()}đ/đêm`,
   );
 
-  // 6.3. Phòng đôi giường kép (Double Room) — 2 người, 1 giường đôi
+  // 5.3. Phòng đôi giường kép (Double Room) — 2 người, 1 giường đôi
   const doubleRoom = await prisma.roomType.upsert({
     where: { hotelId_slug: { hotelId: hotel.id, slug: 'phong-doi-giuong-kep' } },
     update: {
@@ -205,17 +209,17 @@ async function main() {
   const roomTypes = [singleRoom, twinRoom, doubleRoom];
   for (const rt of roomTypes) {
     // Delete existing images
-    await prisma.roomImage.deleteMany({ where: { roomTypeId: rt.id } });
+    await prisma.room_type_images.deleteMany({ where: { room_type_id: rt.id } });
 
     // Add new images
     for (let i = 0; i < roomImages.length; i++) {
-      await prisma.roomImage.create({
+      await prisma.room_type_images.create({
         data: {
-          roomTypeId: rt.id,
+          room_type_id: rt.id,
           url: roomImages[i],
-          alt: `${rt.name} - Ảnh ${i + 1}`,
-          sortOrder: i,
-          isPrimary: i === 0,
+          alt_text: `${rt.name} - Ảnh ${i + 1}`,
+          sort_order: i,
+          is_primary: i === 0,
         },
       });
     }
@@ -225,20 +229,20 @@ async function main() {
   // Link amenities to all room types
   for (const rt of roomTypes) {
     for (const amenity of amenities.slice(0, 7)) {
-      await prisma.roomTypeAmenity.upsert({
+      await prisma.room_type_amenity.upsert({
         where: {
-          roomTypeId_amenityId: {
-            roomTypeId: rt.id,
-            amenityId: amenity.id,
+          room_type_id_amenity_id: {
+            room_type_id: rt.id,
+            amenity_id: amenity.id,
           },
         },
         update: {},
-        create: { roomTypeId: rt.id, amenityId: amenity.id },
+        create: { room_type_id: rt.id, amenity_id: amenity.id },
       });
     }
   }
 
-  // 7. Create Rooms for each room type
+  // 6. Create Rooms for each room type
   const roomCounts = {
     [singleRoom.id]: 8, // 8 phòng đơn
     [twinRoom.id]: 10, // 10 phòng twin
@@ -271,7 +275,7 @@ async function main() {
   }
   console.log(`✅ Rooms: 26 rooms created (8 single + 10 twin + 8 double)`);
 
-  // 8. Create Pricing Rules for each room type
+  // 7. Create Pricing Rules for each room type
   for (const rt of roomTypes) {
     await prisma.pricingRule.upsert({
       where: { id: `weekend-${rt.id}` },
@@ -291,6 +295,7 @@ async function main() {
 
   console.log('\n🎉 Seeding completed!');
   console.log('\n📋 Test accounts:');
+  console.log('   Super Admin: superadmin@khachsannganha.com / SuperAdmin@123');
   console.log('   Admin: admin@khachsannganha.com / Admin@123');
   console.log('   Guest: guest@example.com / Guest@123');
   console.log('\n📋 Room Types:');
@@ -301,7 +306,9 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error('❌ Seeding failed:', e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

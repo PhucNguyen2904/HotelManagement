@@ -17,14 +17,28 @@ function BookingPageContent() {
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const bookingStore = useBookingStore();
+  const setStoreRoomType = useBookingStore((state) => state.setRoomType);
+  const setStoreDates = useBookingStore((state) => state.setDates);
 
   const [roomType, setRoomType] = useState<RoomType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const roomTypeId = searchParams.get('roomTypeId');
-  const checkIn = searchParams.get('checkIn');
-  const checkOut = searchParams.get('checkOut');
+  const queryCheckIn = searchParams.get('checkIn');
+  const queryCheckOut = searchParams.get('checkOut');
+
+  const storeCheckIn = useBookingStore((state) => state.checkIn);
+  const storeCheckOut = useBookingStore((state) => state.checkOut);
+
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const defaultCheckIn = today.toISOString().split('T')[0];
+  const defaultCheckOut = tomorrow.toISOString().split('T')[0];
+
+  const checkIn = queryCheckIn || storeCheckIn || defaultCheckIn;
+  const checkOut = queryCheckOut || storeCheckOut || defaultCheckOut;
 
   useEffect(() => {
     if (authLoading) return;
@@ -42,22 +56,26 @@ function BookingPageContent() {
       try {
         const data = await roomTypesService.getById('default-hotel-id', roomTypeId);
         setRoomType(data);
-        bookingStore.setRoomType(data, 1);
+        setStoreRoomType(data, 1);
       } catch {
         setError('Failed to load room details');
       }
     };
 
     loadRoomType();
-  }, [bookingStore, roomTypeId]);
+  }, [roomTypeId, setStoreRoomType]);
 
   useEffect(() => {
-    if (checkIn && checkOut) bookingStore.setDates(checkIn, checkOut);
-  }, [bookingStore, checkIn, checkOut]);
+    if (checkIn && checkOut) setStoreDates(checkIn, checkOut);
+  }, [checkIn, checkOut, setStoreDates]);
 
-  const nights = checkIn && checkOut ? calculateNights(checkIn, checkOut) : 0;
+  const currentCheckIn = storeCheckIn || checkIn;
+  const currentCheckOut = storeCheckOut || checkOut;
+
+  const nights = currentCheckIn && currentCheckOut ? calculateNights(currentCheckIn, currentCheckOut) : 0;
+  const taxPercent = 10;
   const subtotal = roomType ? roomType.basePrice * nights : 0;
-  const taxAmount = subtotal * 0.1;
+  const taxAmount = subtotal * (taxPercent / 100);
   const total = subtotal + taxAmount;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,14 +84,18 @@ function BookingPageContent() {
     setError('');
 
     try {
-      if (!roomType || !checkIn || !checkOut) {
+      if (!roomType || !currentCheckIn || !currentCheckOut) {
         throw new Error('Missing required booking information');
       }
 
+      if (nights <= 0) {
+        throw new Error('Check-out date must be after check-in date');
+      }
+
       const booking = await bookingsService.create({
-        hotelId: 'default-hotel-id',
-        checkIn,
-        checkOut,
+        hotelId: roomType.hotelId,
+        checkIn: currentCheckIn,
+        checkOut: currentCheckOut,
         rooms: [
           {
             roomTypeId: roomType.id,
@@ -90,13 +112,13 @@ function BookingPageContent() {
 
       router.push(`/bookings/${booking.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Lỗi khi tạo đặt phòng');
+      setError(err.response?.data?.message || err.message || 'Lỗi khi tạo đặt phòng');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!roomType || !checkIn || !checkOut) {
+  if (!roomType) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center">
         <div className="text-center">
@@ -108,7 +130,7 @@ function BookingPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
+    <div className="min-h-screen bg-slate-50 pt-32 pb-12">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
           <p className="font-serif text-xl italic text-sky-800">
@@ -132,6 +154,25 @@ function BookingPageContent() {
                       {error}
                     </div>
                   )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      type="date"
+                      label="Ngày nhận phòng"
+                      value={currentCheckIn}
+                      onChange={(e) => setStoreDates(e.target.value, currentCheckOut)}
+                      min={defaultCheckIn}
+                      required
+                    />
+                    <Input
+                      type="date"
+                      label="Ngày trả phòng"
+                      value={currentCheckOut}
+                      onChange={(e) => setStoreDates(currentCheckIn, e.target.value)}
+                      min={currentCheckIn}
+                      required
+                    />
+                  </div>
 
                   <Input
                     label="Họ và tên"
@@ -208,7 +249,7 @@ function BookingPageContent() {
                         Secure Booking
                       </span>
                     </div>
-                    <Button type="submit" className="mt-1 w-full" isLoading={isLoading}>
+                    <Button type="submit" className="mt-1 w-full" isLoading={isLoading} disabled={nights <= 0}>
                       Xác nhận đặt phòng
                     </Button>
                   </div>
@@ -218,7 +259,7 @@ function BookingPageContent() {
           </div>
 
           <div>
-            <Card className="sticky top-24">
+            <Card className="sticky top-32">
               <CardHeader>
                 <CardTitle className="text-lg text-sky-900">
                   Thông tin đặt phòng
@@ -233,15 +274,15 @@ function BookingPageContent() {
                 <div className="border-t border-gray-200 pt-4">
                   <div className="mb-2 flex justify-between text-sm">
                     <span>Nhận phòng:</span>
-                    <span className="font-medium">{checkIn}</span>
+                    <span className="font-medium">{currentCheckIn}</span>
                   </div>
                   <div className="mb-2 flex justify-between text-sm">
                     <span>Trả phòng:</span>
-                    <span className="font-medium">{checkOut}</span>
+                    <span className="font-medium">{currentCheckOut}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Số đêm:</span>
-                    <span className="font-medium">{nights} đêm</span>
+                    <span className="font-medium">{nights > 0 ? nights : 0} đêm</span>
                   </div>
                 </div>
 

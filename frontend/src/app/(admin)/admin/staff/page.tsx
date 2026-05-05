@@ -19,7 +19,7 @@ type StaffUser = {
 
 const roleOptions: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.HOTEL_ADMIN, UserRole.STAFF];
 
-const initialForm = { id: '', fullName: '', email: '', phone: '', role: UserRole.STAFF as UserRole };
+const initialForm = { id: '', fullName: '', email: '', phone: '', role: UserRole.STAFF as UserRole, password: '' };
 
 export default function StaffManagementPage() {
   const [staff, setStaff] = useState<StaffUser[]>([]);
@@ -108,6 +108,7 @@ export default function StaffManagementPage() {
       email: selected.email,
       phone: selected.phone ?? '',
       role: selected.role,
+      password: '',
     });
     setShowModal(true);
   };
@@ -115,8 +116,9 @@ export default function StaffManagementPage() {
   const submitStaff = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.fullName || !form.email) return;
-    if (editingStaff) {
-      try {
+    
+    try {
+      if (editingStaff) {
         const updated = await usersService.update(editingStaff.id, {
           fullName: form.fullName,
           email: form.email,
@@ -128,18 +130,39 @@ export default function StaffManagementPage() {
           prev.map((item) =>
             item.id === editingStaff.id
               ? {
-                  ...item,
-                  fullName: updated.fullName,
-                  email: updated.email,
-                  phone: updated.phone ?? '',
-                  role: updated.role,
-                }
+                ...item,
+                fullName: updated.fullName,
+                email: updated.email,
+                phone: updated.phone ?? '',
+                role: updated.role,
+              }
               : item
           )
         );
-      } catch (error) {
-        console.error('Failed to update staff user', error);
+      } else {
+        const created = await usersService.create({
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone || undefined,
+          role: form.role,
+          password: form.password,
+        });
+
+        setStaff((prev) => [
+          {
+            id: created.id,
+            fullName: created.fullName,
+            email: created.email,
+            phone: created.phone ?? '',
+            role: created.role,
+            isActive: true,
+            createdAt: created.createdAt,
+          },
+          ...prev,
+        ]);
       }
+    } catch (error) {
+      console.error('Failed to save staff user', error);
     }
     setShowModal(false);
   };
@@ -158,8 +181,17 @@ export default function StaffManagementPage() {
       <section className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-slate-900">Quản lý nhân sự</h2>
-          <p className="mt-1 text-sm text-slate-500">Dữ liệu lấy từ API users, gồm admin và staff thật trong hệ thống.</p>
         </div>
+        <button
+          onClick={() => {
+            setEditingStaff(null);
+            setForm(initialForm);
+            setShowModal(true);
+          }}
+          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+        >
+          + Thêm nhân viên
+        </button>
       </section>
 
       <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -168,8 +200,11 @@ export default function StaffManagementPage() {
 
       <Modal open={showModal} title={editingStaff ? 'Sửa nhân viên' : 'Thêm nhân viên'} onClose={() => setShowModal(false)}>
         <form onSubmit={submitStaff} className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" placeholder="Họ tên" value={form.fullName} onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))} />
-          <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" placeholder="Email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} />
+          <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" placeholder="Họ tên" value={form.fullName} onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))} required />
+          <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" type="email" placeholder="Email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} required />
+          {!editingStaff && (
+            <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" type="password" placeholder="Mật khẩu" value={form.password} onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))} required />
+          )}
           <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" placeholder="Số điện thoại" value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} />
           <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" value={form.role} onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value as UserRole }))}>
             {roleOptions.map((role) => (
