@@ -39,6 +39,11 @@ describe('BookingsService (Unit)', () => {
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
+          roomType: {
+            findMany: jest.fn().mockResolvedValue([
+              { id: 'roomtype-1', basePrice: 500000, name: 'Deluxe' },
+            ]),
+          },
           room: {
             findMany: jest.fn().mockResolvedValue([
               { 
@@ -46,7 +51,6 @@ describe('BookingsService (Unit)', () => {
                 roomTypeId: 'roomtype-1', 
                 isActive: true,
                 roomNumber: '101',
-                roomType: { basePrice: 500000, name: 'Deluxe' }
               },
             ]),
           },
@@ -56,6 +60,7 @@ describe('BookingsService (Unit)', () => {
           },
           bookingRoom: {
             createMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findMany: jest.fn().mockResolvedValue([]),
           },
           booking: {
             findFirst: jest.fn().mockResolvedValue(null),
@@ -72,11 +77,6 @@ describe('BookingsService (Unit)', () => {
               taxRate: 10,
               taxAmount: 100000,
               totalAmount: 1100000,
-              user: { id: 'user-1', fullName: 'Test', email: 'test@test.com', phone: '123' },
-              hotel: { id: 'hotel-1', name: 'Hotel', slug: 'hotel' },
-              bookingRooms: [],
-              payments: [],
-              review: null,
             }),
             create: jest.fn().mockResolvedValue({
               id: 'booking-1',
@@ -94,11 +94,14 @@ describe('BookingsService (Unit)', () => {
             }),
             count: jest.fn().mockResolvedValue(0),
           },
-          taxRate: {
-            findFirst: jest.fn().mockResolvedValue({
-              id: 'tax-1',
-              rate: 10,
-            }),
+          user: {
+            findUnique: jest.fn().mockResolvedValue({ id: 'user-1', fullName: 'Test', email: 'test@test.com', phone: '123' }),
+          },
+          hotel: {
+            findUnique: jest.fn().mockResolvedValue({ id: 'hotel-1', name: 'Hotel', slug: 'hotel' }),
+          },
+          payment: {
+            findMany: jest.fn().mockResolvedValue([]),
           },
         } as any);
       });
@@ -156,8 +159,16 @@ describe('BookingsService (Unit)', () => {
       const mockBookings = [mockBooking];
       prismaService.booking.findMany.mockResolvedValue(mockBookings);
       prismaService.booking.count.mockResolvedValue(1);
+      // findOne calls these for each booking in the list
+      prismaService.booking.findUnique.mockResolvedValue(mockBooking);
+      prismaService.user.findUnique.mockResolvedValue({ id: 'user-1', fullName: 'Test', email: 'test@test.com', phone: '123' });
+      prismaService.hotel.findUnique.mockResolvedValue({ id: 'hotel-1', name: 'Hotel', slug: 'hotel' });
+      prismaService.bookingRoom.findMany.mockResolvedValue([]);
+      prismaService.payment.findMany.mockResolvedValue([]);
+      prismaService.room.findMany.mockResolvedValue([]);
+      prismaService.roomType.findMany.mockResolvedValue([]);
 
-      const result = await service.findAll('user-1', 1, 10);
+      const result = await service.findByUser('user-1', 1, 10);
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
@@ -169,6 +180,12 @@ describe('BookingsService (Unit)', () => {
   describe('findOne', () => {
     it('should return booking by id', async () => {
       prismaService.booking.findUnique.mockResolvedValue(mockBooking);
+      prismaService.user.findUnique.mockResolvedValue({ id: 'user-1', fullName: 'Test', email: 'test@test.com', phone: '123' });
+      prismaService.hotel.findUnique.mockResolvedValue({ id: 'hotel-1', name: 'Hotel', slug: 'hotel' });
+      prismaService.bookingRoom.findMany.mockResolvedValue([]);
+      prismaService.payment.findMany.mockResolvedValue([]);
+      prismaService.room.findMany.mockResolvedValue([]);
+      prismaService.roomType.findMany.mockResolvedValue([]);
 
       const result = await service.findOne('booking-1');
 
@@ -189,6 +206,12 @@ describe('BookingsService (Unit)', () => {
     it('should cancel a booking with pending status', async () => {
       const pendingBooking = { ...mockBooking, status: 'PENDING', userId: 'user-1' };
       prismaService.booking.findUnique.mockResolvedValue(pendingBooking);
+      prismaService.user.findUnique.mockResolvedValue({ id: 'user-1', fullName: 'Test', email: 'test@test.com', phone: '123' });
+      prismaService.hotel.findUnique.mockResolvedValue({ id: 'hotel-1', name: 'Hotel', slug: 'hotel' });
+      prismaService.bookingRoom.findMany.mockResolvedValue([]);
+      prismaService.payment.findMany.mockResolvedValue([]);
+      prismaService.room.findMany.mockResolvedValue([]);
+      prismaService.roomType.findMany.mockResolvedValue([]);
       prismaService.roomAvailability.deleteMany.mockResolvedValue({ count: 2 });
       prismaService.booking.update.mockResolvedValue({
         ...pendingBooking,
@@ -204,6 +227,12 @@ describe('BookingsService (Unit)', () => {
     it('should prevent cancelling checked-in bookings', async () => {
       const checkedInBooking = { ...mockBooking, status: 'CHECKED_IN', userId: 'user-1' };
       prismaService.booking.findUnique.mockResolvedValue(checkedInBooking);
+      prismaService.user.findUnique.mockResolvedValue({ id: 'user-1', fullName: 'Test', email: 'test@test.com', phone: '123' });
+      prismaService.hotel.findUnique.mockResolvedValue({ id: 'hotel-1', name: 'Hotel', slug: 'hotel' });
+      prismaService.bookingRoom.findMany.mockResolvedValue([]);
+      prismaService.payment.findMany.mockResolvedValue([]);
+      prismaService.room.findMany.mockResolvedValue([]);
+      prismaService.roomType.findMany.mockResolvedValue([]);
 
       await expect(service.cancel('booking-1', 'user-1')).rejects.toThrow(
         BadRequestException,

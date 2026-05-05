@@ -36,12 +36,7 @@ export async function setupTestDatabase() {
       slug: 'deluxe-room',
       description: 'Spacious room with a view',
       basePrice: 500000, // VND
-      maxAdults: 2,
-      maxChildren: 1,
-      maxInfants: 0,
       bedType: 'DOUBLE',
-      bedCount: 1,
-      sortOrder: 1,
     },
   });
 
@@ -106,7 +101,6 @@ export async function cleanupTestDatabase() {
   await prisma.payment.deleteMany({});
   await prisma.room.deleteMany({});
   await prisma.roomType.deleteMany({});
-  await prisma.hotelStaff.deleteMany({});
   await prisma.user.deleteMany({});
   await prisma.hotel.deleteMany({});
 }

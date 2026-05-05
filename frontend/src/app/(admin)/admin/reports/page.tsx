@@ -2,18 +2,24 @@
 
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { occupancyByWeek, revenueByDay, topRoomTypes } from '@/components/manager/mock-data';
+import { useManager } from '@/components/manager';
+import { buildOccupancyByWeek, buildRevenueByDayData, buildTopRoomTypes } from '@/lib/hotel-admin-data';
 import { formatCurrency } from '@/lib/utils';
 
 const donutColors = ['#0f766e', '#14b8a6', '#99f6e4'];
 
 export default function OperationReportsPage() {
+  const { bookings, rooms } = useManager();
   const [month, setMonth] = useState('2026-04');
 
   const headerText = useMemo(() => {
     const [year, monthValue] = month.split('-');
     return `Tháng ${monthValue}/${year}`;
   }, [month]);
+
+  const revenueByDay = useMemo(() => buildRevenueByDayData(bookings, month), [bookings, month]);
+  const occupancyByWeek = useMemo(() => buildOccupancyByWeek(bookings, rooms.length, month), [bookings, rooms.length, month]);
+  const topRoomTypes = useMemo(() => buildTopRoomTypes(bookings, rooms), [bookings, rooms]);
 
   return (
     <div className="space-y-5">

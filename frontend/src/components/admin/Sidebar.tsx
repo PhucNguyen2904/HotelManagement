@@ -46,7 +46,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
         <nav className="space-y-1 p-3">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              item.href === '/admin'
+                ? pathname === '/admin'
+                : pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
               <Link

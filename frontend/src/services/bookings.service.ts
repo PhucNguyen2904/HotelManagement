@@ -41,6 +41,19 @@ export const bookingsService = {
     }
   },
 
+  async getHotelBookings(
+    hotelId: string,
+    query?: Omit<BookingsQuery, 'hotelId'>,
+  ): Promise<PaginatedResponse<Booking>> {
+    const response = await api.get<ApiResponse<PaginatedResponse<Booking>>>(
+      `/bookings/hotel/${hotelId}`,
+      {
+        params: query,
+      }
+    );
+    return response.data.data;
+  },
+
   async getById(id: string): Promise<Booking> {
     const response = await api.get<ApiResponse<Booking>>(`/bookings/${id}`);
     return response.data.data;

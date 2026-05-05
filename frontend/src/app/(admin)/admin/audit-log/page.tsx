@@ -2,17 +2,30 @@
 
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui';
-import { AuditLogRow, auditLogs } from '@/components/admin/mock-data';
+import { useManager } from '@/components/manager';
 import { DataTable, TableColumn } from '@/components/admin/DataTable';
+import { buildActivityFeed } from '@/lib/hotel-admin-data';
+
+type AuditLogRow = {
+  id: string;
+  user: string;
+  action: string;
+  target: string;
+  ip: string;
+  timestamp: string;
+};
 
 const PAGE_SIZE = 3;
 
 export default function AuditLogPage() {
+  const { bookings } = useManager();
   const [selectedUser, setSelectedUser] = useState('all');
   const [selectedAction, setSelectedAction] = useState('all');
   const [fromTime, setFromTime] = useState('2026-04-22');
   const [toTime, setToTime] = useState('2026-04-23');
   const [page, setPage] = useState(1);
+
+  const auditLogs = useMemo(() => buildActivityFeed(bookings), [bookings]);
 
   const filteredLogs = useMemo(() => {
     return auditLogs.filter((item) => {
@@ -22,7 +35,7 @@ export default function AuditLogPage() {
         item.timestamp.slice(0, 10) >= fromTime && item.timestamp.slice(0, 10) <= toTime;
       return byUser && byAction && byTime;
     });
-  }, [selectedAction, selectedUser, fromTime, toTime]);
+  }, [auditLogs, selectedAction, selectedUser, fromTime, toTime]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE));
   const logsOnPage = filteredLogs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

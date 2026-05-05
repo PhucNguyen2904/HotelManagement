@@ -10,7 +10,6 @@ import {
   ChevronRight,
   LayoutDashboard,
   Users,
-  UserSquare2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +18,6 @@ const navItems = [
   { href: '/admin/bookings', label: 'Đặt phòng', icon: CalendarCheck2 },
   { href: '/admin/rooms', label: 'Quản lý phòng', icon: BedDouble },
   { href: '/admin/customers', label: 'Khách hàng', icon: Users },
-  { href: '/admin/staff', label: 'Nhân viên', icon: UserSquare2 },
   { href: '/admin/reports', label: 'Báo cáo', icon: BarChart3 },
 ];
 
@@ -55,7 +53,10 @@ export function Sidebar({
         <nav className="space-y-1 p-3">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active =
+              item.href === '/admin'
+                ? pathname === '/admin'
+                : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}

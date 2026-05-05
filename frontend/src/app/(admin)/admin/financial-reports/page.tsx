@@ -6,14 +6,30 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recha
 import { Button } from '@/components/ui';
 import { ChartCard } from '@/components/admin/ChartCard';
 import { DataTable, TableColumn } from '@/components/admin/DataTable';
-import { financialRows, FinancialRow, revenueByMonthData } from '@/components/admin/mock-data';
+import { useManager } from '@/components/manager';
+import { buildFinancialRows, buildRevenueByMonthData } from '@/lib/hotel-admin-data';
 import { formatCurrency } from '@/lib/utils';
 
+type FinancialRow = {
+  period: string;
+  revenue: number;
+  bookings: number;
+  avgDailyRate: number;
+};
+
 export default function FinancialReportsPage() {
+  const { bookings } = useManager();
   const [dateRange, setDateRange] = useState({
     from: '2026-04-17',
     to: '2026-04-23',
   });
+
+  const financialRows = useMemo(
+    () => buildFinancialRows(bookings, dateRange.from, dateRange.to),
+    [bookings, dateRange]
+  );
+
+  const revenueByMonthData = useMemo(() => buildRevenueByMonthData(bookings), [bookings]);
 
   const columns: TableColumn<FinancialRow>[] = useMemo(
     () => [

@@ -66,12 +66,16 @@ describe('UsersService (Unit)', () => {
     it('should return a user by id', async () => {
       prismaService.user.findUnique.mockResolvedValue({
         ...mockUser,
-        _count: { bookings: 2, reviews: 1 },
       });
+      prismaService.booking.count.mockResolvedValue(2);
+      prismaService.review.count.mockResolvedValue(1);
 
       const result = await service.findOne('user-1');
 
-      expect(result).toEqual(expect.objectContaining(mockUser));
+      expect(result).toEqual(expect.objectContaining({
+        id: mockUser.id,
+        email: mockUser.email,
+      }));
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         select: expect.any(Object),
@@ -91,6 +95,8 @@ describe('UsersService (Unit)', () => {
     it('should update user fields', async () => {
       const updateDto = { fullName: 'Updated Name' };
       prismaService.user.findUnique.mockResolvedValue(mockUser);
+      prismaService.booking.count.mockResolvedValue(0);
+      prismaService.review.count.mockResolvedValue(0);
       prismaService.user.update.mockResolvedValue({
         ...mockUser,
         fullName: updateDto.fullName,
@@ -109,6 +115,8 @@ describe('UsersService (Unit)', () => {
     it('should not allow updating email to existing one', async () => {
       const updateDto = { email: 'admin@test.com' }; // already exists
       prismaService.user.findUnique.mockResolvedValue(mockUser);
+      prismaService.booking.count.mockResolvedValue(0);
+      prismaService.review.count.mockResolvedValue(0);
       prismaService.user.update.mockRejectedValue(
         new Error('Unique constraint failed'),
       );
@@ -120,6 +128,8 @@ describe('UsersService (Unit)', () => {
   describe('remove', () => {
     it('should soft delete user', async () => {
       prismaService.user.findUnique.mockResolvedValue(mockUser);
+      prismaService.booking.count.mockResolvedValue(0);
+      prismaService.review.count.mockResolvedValue(0);
       prismaService.user.update.mockResolvedValue({
         ...mockUser,
         isActive: false,

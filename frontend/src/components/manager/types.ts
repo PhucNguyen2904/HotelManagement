@@ -1,6 +1,6 @@
 export type RoomStatus = 'available' | 'occupied' | 'cleaning' | 'maintenance';
 export type BookingStatus = 'pending' | 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled';
-export type RoomType = 'Standard' | 'Deluxe' | 'Suite';
+export type RoomType = 'Single' | 'Twin' | 'Double' | 'Suite' | 'Standard' | 'Deluxe';
 export type ShiftType = 'Sáng' | 'Chiều' | 'Tối';
 export type StaffRole = 'Receptionist' | 'Housekeeping';
 export type StaffStatus = 'on-duty' | 'off-duty';
@@ -30,6 +30,13 @@ export interface Booking {
   note?: string;
   cancelReason?: string;
   createdAt: string;
+  bookingCode?: string;
+  userId?: string;
+  hotelId?: string;
+  confirmedAt?: string;
+  checkedInAt?: string;
+  checkedOutAt?: string;
+  cancelledAt?: string;
 }
 
 export interface Customer {

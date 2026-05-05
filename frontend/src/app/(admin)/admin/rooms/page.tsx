@@ -7,13 +7,13 @@ import { formatCurrency } from '@/lib/utils';
 
 const amenityOptions = ['Wifi', 'TV', 'May lanh', 'Bon tam', 'Ban cong', 'Minibar'];
 const statusOptions: RoomStatus[] = ['available', 'occupied', 'cleaning', 'maintenance'];
-const roomTypeOptions: RoomType[] = ['Standard', 'Deluxe', 'Suite'];
+const roomTypeOptions: RoomType[] = ['Single', 'Twin', 'Double', 'Suite'];
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const initialForm = {
   id: '',
   roomNumber: '',
-  type: 'Standard' as RoomType,
+  type: 'Single' as RoomType,
   floor: 1,
   pricePerNight: 700000,
   description: '',

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useManager } from '@/components/manager';
-import { mockCustomers } from '@/components/manager/mock-data';
+import { buildCustomerSummaries } from '@/lib/hotel-admin-data';
 import { formatDate } from '@/lib/utils';
 
 export default function CustomerManagementPage() {
@@ -12,12 +12,12 @@ export default function CustomerManagementPage() {
 
   const filteredCustomers = useMemo(
     () =>
-      mockCustomers.filter((customer) => {
+      buildCustomerSummaries(bookings).filter((customer) => {
         const q = keyword.trim().toLowerCase();
         if (!q) return true;
         return customer.name.toLowerCase().includes(q) || customer.phone.includes(q);
       }),
-    [keyword]
+    [bookings, keyword]
   );
 
   const selectedCustomer = filteredCustomers.find((customer) => customer.id === selectedCustomerId);

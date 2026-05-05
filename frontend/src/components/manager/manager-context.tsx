@@ -1,8 +1,10 @@
 'use client';
 
-import { createContext, useContext, useMemo, useReducer } from 'react';
-import { initialBookings, initialRooms } from '@/components/manager/mock-data';
+import { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
 import { Booking, BookingStatus, Room, RoomStatus } from '@/components/manager/types';
+import { NGANHA_HOTEL_ID, toManagerBooking, toManagerRoom } from '@/lib/hotel-admin-data';
+import { bookingsService } from '@/services/bookings.service';
+import { roomsService } from '@/services/rooms.service';
 
 interface ManagerState {
   rooms: Room[];
@@ -10,6 +12,7 @@ interface ManagerState {
 }
 
 type ManagerAction =
+  | { type: 'SET_DATA'; payload: ManagerState }
   | { type: 'ADD_BOOKING'; payload: Booking }
   | { type: 'UPDATE_BOOKING_STATUS'; payload: { id: string; status: BookingStatus; cancelReason?: string } }
   | { type: 'ADD_ROOM'; payload: Room }
@@ -26,13 +29,10 @@ interface ManagerContextValue extends ManagerState {
 
 const ManagerContext = createContext<ManagerContextValue | undefined>(undefined);
 
-const initialState: ManagerState = {
-  rooms: initialRooms,
-  bookings: initialBookings,
-};
-
 function managerReducer(state: ManagerState, action: ManagerAction): ManagerState {
   switch (action.type) {
+    case 'SET_DATA':
+      return action.payload;
     case 'ADD_BOOKING':
       return { ...state, bookings: [action.payload, ...state.bookings] };
     case 'UPDATE_BOOKING_STATUS':
@@ -64,7 +64,27 @@ function managerReducer(state: ManagerState, action: ManagerAction): ManagerStat
 }
 
 export function ManagerProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(managerReducer, initialState);
+  const [state, dispatch] = useReducer(managerReducer, { rooms: [], bookings: [] });
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [bookingsResponse, roomsResponse] = await Promise.all([
+          bookingsService.getHotelBookings(NGANHA_HOTEL_ID, { limit: 100 }),
+          roomsService.getAllByHotel(NGANHA_HOTEL_ID),
+        ]);
+
+        const mappedRooms = roomsResponse.map((room) => toManagerRoom(room));
+        const mappedBookings = bookingsResponse.data.map((booking) => toManagerBooking(booking));
+
+        dispatch({ type: 'SET_DATA', payload: { rooms: mappedRooms, bookings: mappedBookings } });
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const value = useMemo(
     () => ({
