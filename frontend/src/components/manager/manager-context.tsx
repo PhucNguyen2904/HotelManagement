@@ -108,8 +108,17 @@ export function ManagerProvider({ children }: { children: React.ReactNode }) {
       },
       addRoom: (room: Room) => dispatch({ type: 'ADD_ROOM', payload: room }),
       updateRoom: (room: Room) => dispatch({ type: 'UPDATE_ROOM', payload: room }),
-      updateRoomStatus: (roomId: string, status: RoomStatus) =>
-        dispatch({ type: 'UPDATE_ROOM_STATUS', payload: { roomId, status } }),
+      updateRoomStatus: async (roomId: string, status: RoomStatus) => {
+        try {
+          const apiStatus = status.toUpperCase().replace('-', '_');
+          await roomsService.update(roomId, { status: apiStatus as any });
+          dispatch({ type: 'UPDATE_ROOM_STATUS', payload: { roomId, status } });
+          await loadData();
+        } catch (error) {
+          console.error('Error updating room status:', error);
+          alert('Không thể cập nhật trạng thái phòng');
+        }
+      },
       refreshData: loadData,
     }),
     [state]

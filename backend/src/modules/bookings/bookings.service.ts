@@ -338,9 +338,32 @@ export class BookingsService {
       await this.releaseAvailability(booking.id);
     }
 
-    return this.prisma.booking.update({
-      where: { id: booking.id },
-      data: updateData,
+    // Update room statuses based on booking status
+    return this.prisma.$transaction(async (tx) => {
+      const updatedBooking = await tx.booking.update({
+        where: { id: booking.id },
+        data: updateData,
+      });
+
+      const bookingRooms = await tx.bookingRoom.findMany({
+        where: { bookingId: booking.id },
+      });
+
+      const roomIds = bookingRooms.map((br) => br.roomId);
+
+      if (status === 'CHECKED_IN') {
+        await tx.room.updateMany({
+          where: { id: { in: roomIds } },
+          data: { status: 'OCCUPIED' },
+        });
+      } else if (status === 'CHECKED_OUT' || status === 'CANCELLED') {
+        await tx.room.updateMany({
+          where: { id: { in: roomIds } },
+          data: { status: 'AVAILABLE' },
+        });
+      }
+
+      return updatedBooking;
     });
   }
 
@@ -357,13 +380,27 @@ export class BookingsService {
 
     await this.releaseAvailability(booking.id);
 
-    return this.prisma.booking.update({
-      where: { id: booking.id },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date(),
-        cancellation_reason: reason,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updatedBooking = await tx.booking.update({
+        where: { id: booking.id },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancellation_reason: reason,
+        },
+      });
+
+      const bookingRooms = await tx.bookingRoom.findMany({
+        where: { bookingId: booking.id },
+      });
+
+      const roomIds = bookingRooms.map((br) => br.roomId);
+      await tx.room.updateMany({
+        where: { id: { in: roomIds } },
+        data: { status: 'AVAILABLE' },
+      });
+
+      return updatedBooking;
     });
   }
 
@@ -641,6 +678,25 @@ export class BookingsService {
         await tx.roomAvailability.createMany({
           data: availabilityData,
         });
+
+        // Update room statuses to reflect assignment
+        // If booking is CHECKED_IN, new rooms should be OCCUPIED, old rooms AVAILABLE
+        // If booking is PENDING/CONFIRMED but today is within range, also set to OCCUPIED?
+        // For now, let's follow the booking status: if CHECKED_IN, set to OCCUPIED.
+        if (booking.status === 'CHECKED_IN') {
+          // Reset old rooms to AVAILABLE (simplified: all rooms in currentBookingRooms)
+          const oldRoomIds = currentBookingRooms.map(br => br.roomId);
+          await tx.room.updateMany({
+            where: { id: { in: oldRoomIds } },
+            data: { status: 'AVAILABLE' },
+          });
+
+          // Set new rooms to OCCUPIED
+          await tx.room.updateMany({
+            where: { id: { in: roomIds } },
+            data: { status: 'OCCUPIED' },
+          });
+        }
 
         this.logger.log(
           `Rooms reassigned for booking ${booking.bookingCode}: ${roomIds.join(', ')}`,

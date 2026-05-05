@@ -20,4 +20,9 @@ export const roomsService = {
     const response = await api.get<ApiResponse<HotelRoom>>(`/rooms/${id}`);
     return response.data.data;
   },
+
+  async update(id: string, room: Partial<Room>): Promise<HotelRoom> {
+    const response = await api.patch<ApiResponse<HotelRoom>>(`/rooms/${id}`, room);
+    return response.data.data;
+  },
 };
