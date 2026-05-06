@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: hotel-booking-api
+    env: node
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
