@@ -19,12 +19,14 @@ api.interceptors.request.use(
       }
     }
 
-    // Prevent browser caching for GET requests
+    // Prevent browser caching for GET requests (Disabled to fix CORS preflight issues)
+    /*
     if (config.method === 'get') {
       config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
       config.headers['Pragma'] = 'no-cache';
       config.headers['Expires'] = '0';
     }
+    */
 
     return config;
   },
