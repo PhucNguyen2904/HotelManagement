@@ -19,7 +19,11 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 
+// Controllers
+import { AppController } from './app.controller';
+
 @Module({
+  controllers: [AppController],
   imports: [
     // Config
     ConfigModule.forRoot({

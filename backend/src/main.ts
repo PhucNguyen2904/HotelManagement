@@ -12,7 +12,9 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Global prefix
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: ['/'],
+  });
 
   // Security
   app.use(helmet());
