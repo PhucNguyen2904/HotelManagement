@@ -82,6 +82,7 @@ CREATE TABLE users (
     full_name VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     id_number VARCHAR(50), -- CCCD/Passport
+    address VARCHAR(500),
     role user_role DEFAULT 'GUEST',
     avatar_url VARCHAR(500),
     hotel_id VARCHAR(25) REFERENCES hotels(id) ON DELETE SET NULL, -- For staff/admin
