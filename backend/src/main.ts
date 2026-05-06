@@ -11,10 +11,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
-  // Global prefix
-  app.setGlobalPrefix('api', {
-    exclude: ['/'],
-  });
+  // Global prefix removed to match frontend expectations
+  // app.setGlobalPrefix('api', {
+  //   exclude: ['/'],
+  // });
 
   // Security
   app.use(helmet());
