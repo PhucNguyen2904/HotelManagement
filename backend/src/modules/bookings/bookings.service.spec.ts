@@ -34,7 +34,7 @@ describe('BookingsService (Unit)', () => {
         hotelId: 'hotel-1',
         checkIn: checkInStr,
         checkOut: checkOutStr,
-        rooms: [{ roomId: 'room-1', adults: 1 }],
+        rooms: [{ roomTypeId: 'roomtype-1', adults: 1 }],
       };
 
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -114,10 +114,10 @@ describe('BookingsService (Unit)', () => {
 
     it('should throw BadRequestException if checkOut before checkIn', async () => {
       const createDto = {
-        checkIn: new Date('2025-06-03'),
-        checkOut: new Date('2025-06-01'),
-        rooms: [{ roomId: 'room-1', price: 500000 }],
-        totalPrice: 1000000,
+        hotelId: 'hotel-1',
+        checkIn: '2025-06-03',
+        checkOut: '2025-06-01',
+        rooms: [{ roomTypeId: 'roomtype-1', adults: 1 }],
       };
 
       await expect(service.create('user-1', createDto)).rejects.toThrow(
@@ -127,10 +127,10 @@ describe('BookingsService (Unit)', () => {
 
     it('should reject stay longer than 30 nights', async () => {
       const createDto = {
-        checkIn: new Date('2025-06-01'),
-        checkOut: new Date('2025-08-01'),
-        rooms: [{ roomId: 'room-1', price: 500000 }],
-        totalPrice: 1000000,
+        hotelId: 'hotel-1',
+        checkIn: '2025-06-01',
+        checkOut: '2025-08-01',
+        rooms: [{ roomTypeId: 'roomtype-1', adults: 1 }],
       };
 
       await expect(service.create('user-1', createDto)).rejects.toThrow(
@@ -140,10 +140,10 @@ describe('BookingsService (Unit)', () => {
 
     it('should prevent overbooking with Serializable transaction', async () => {
       const createDto = {
-        checkIn: new Date('2025-06-01'),
-        checkOut: new Date('2025-06-03'),
-        rooms: [{ roomId: 'room-1', price: 500000 }],
-        totalPrice: 1000000,
+        hotelId: 'hotel-1',
+        checkIn: '2025-06-01',
+        checkOut: '2025-06-03',
+        rooms: [{ roomTypeId: 'roomtype-1', adults: 1 }],
       };
 
       prismaService.$transaction.mockRejectedValue(
@@ -219,7 +219,7 @@ describe('BookingsService (Unit)', () => {
         cancelledAt: new Date(),
       });
 
-      const result = await service.cancel('booking-1', 'user-1');
+      const result = await service.cancel('booking-1', 'user-1', 'USER');
 
       expect(result.status).toBe('CANCELLED');
     });
@@ -234,7 +234,7 @@ describe('BookingsService (Unit)', () => {
       prismaService.room.findMany.mockResolvedValue([]);
       prismaService.roomType.findMany.mockResolvedValue([]);
 
-      await expect(service.cancel('booking-1', 'user-1')).rejects.toThrow(
+      await expect(service.cancel('booking-1', 'user-1', 'USER')).rejects.toThrow(
         BadRequestException,
       );
     });
