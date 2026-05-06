@@ -73,7 +73,6 @@ model RoomType {
   basePrice     Decimal   @map("base_price") @db.Decimal(12, 0)
   maxAdults     Int?      @default(2) @map("max_adults")
   maxChildren   Int?      @default(1) @map("max_children")
-  maxInfants    Int?      @default(1) @map("max_infants")
   bedType       bed_type? @default(DOUBLE) @map("bed_type")
   bedCount      Int?      @default(1) @map("bed_count")
   areaSize      Float?    @map("area_size")

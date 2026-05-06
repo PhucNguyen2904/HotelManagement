@@ -127,7 +127,6 @@ async function migrate() {
         basePrice: parseInt(metaMap.get('base_price') || '500000'),
         maxAdults: parseInt(metaMap.get('maximum_adults') || '2'),
         maxChildren: parseInt(metaMap.get('maximum_children') || '1'),
-        maxInfants: parseInt(metaMap.get('maximum_infants') || '1'),
         bedType: 'DOUBLE',
       },
     });

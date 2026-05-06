@@ -20,7 +20,6 @@ Tài liệu này mô tả mapping dữ liệu giữa các tầng: **Database ↔
 | `base_price` | DECIMAL(12,0) | - | Giá cơ bản (VND) |
 | `max_adults` | INT | 2 | Số người lớn tối đa |
 | `max_children` | INT | 1 | Số trẻ em tối đa |
-| `max_infants` | INT | 1 | Số trẻ sơ sinh tối đa |
 | `bed_type` | ENUM | DOUBLE | Loại giường |
 | `bed_count` | INT | 1 | **Số lượng giường** |
 | `area_size` | FLOAT | NULL | Diện tích (m²) |
@@ -63,7 +62,6 @@ model RoomType {
   basePrice   Decimal  @map("base_price") @db.Decimal(12, 0)
   maxAdults   Int      @default(2) @map("max_adults")
   maxChildren Int      @default(1) @map("max_children")
-  maxInfants  Int      @default(1) @map("max_infants")
   bedType     BedType  @default(DOUBLE) @map("bed_type")
   bedCount    Int      @default(1) @map("bed_count")
   areaSize    Float?   @map("area_size")
@@ -113,7 +111,6 @@ model RoomType {
   "basePrice": 450000,
   "maxAdults": 2,
   "maxChildren": 1,
-  "maxInfants": 1,
   "bedType": "TWIN",
   "bedCount": 2,
   "areaSize": 25,
@@ -211,7 +208,6 @@ roomTypesService.getBySlug(hotelId, slug)
 | base_price | basePrice | basePrice | basePrice |
 | max_adults | maxAdults | maxAdults | maxAdults |
 | max_children | maxChildren | maxChildren | maxChildren |
-| max_infants | maxInfants | maxInfants | - |
 | bed_type | bedType | bedType | bedType |
 | **bed_count** | **bedCount** | **bedCount** | **bedCount** |
 | area_size | areaSize | areaSize | areaSize |
