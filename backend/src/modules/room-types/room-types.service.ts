@@ -95,9 +95,9 @@ export class RoomTypesService {
 
   async findPublicByHotel(
     hotelId: string,
-    query: { checkIn?: string; checkOut?: string; adults?: number },
+    query: { checkIn?: string; checkOut?: string; adults?: number; slug?: string },
   ) {
-    const { checkIn, checkOut, adults } = query;
+    const { checkIn, checkOut, adults, slug } = query;
 
     if (checkIn && checkOut) {
       const startDate = new Date(checkIn);
@@ -113,6 +113,7 @@ export class RoomTypesService {
           hotelId,
           isActive: true,
           ...(adults ? { maxAdults: { gte: adults } } : {}),
+          ...(slug ? { slug } : {}),
         },
         orderBy: { createdAt: 'asc' },
         include: { images: true },
@@ -214,9 +215,16 @@ export class RoomTypesService {
       checkIn: checkIn ?? null,
       checkOut: checkOut ?? null,
       adults: adults ?? null,
-      roomTypes: adults
-        ? mockRoomTypes.filter((roomType) => roomType.maxAdults >= adults)
-        : mockRoomTypes,
+      roomTypes: (() => {
+        let filtered = mockRoomTypes;
+        if (adults) {
+          filtered = filtered.filter((rt) => rt.maxAdults >= adults);
+        }
+        if (slug) {
+          filtered = filtered.filter((rt) => rt.slug === slug);
+        }
+        return filtered;
+      })(),
       source: 'mock',
     };
   }

@@ -6,6 +6,7 @@ export interface RoomTypesQuery {
   checkIn?: string;
   checkOut?: string;
   adults?: number;
+  slug?: string;
 }
 
 export const roomTypesService = {
@@ -21,6 +22,7 @@ export const roomTypesService = {
           checkIn: query.checkIn,
           checkOut: query.checkOut,
           adults: query.adults,
+          slug: query.slug,
         },
       },
     );

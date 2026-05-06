@@ -9,3 +9,4 @@ export {
   CardFooter,
 } from './Card';
 export { ImageGallery } from './ImageGallery';
+export { Select } from './Select';

@@ -19,4 +19,8 @@ export class RoomTypeQueryDto {
   @IsInt()
   @Min(1)
   adults?: number;
+
+  @ApiPropertyOptional({ example: 'phong-don' })
+  @IsOptional()
+  slug?: string;
 }

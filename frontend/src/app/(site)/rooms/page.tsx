@@ -12,7 +12,8 @@ function RoomsPageContent() {
   const hotelId = searchParams.get('hotelId') || NGANHA_HOTEL_ID;
   const checkIn = searchParams.get('checkIn') || '';
   const checkOut = searchParams.get('checkOut') || '';
-  const adults = parseInt(searchParams.get('adults') || '2', 10);
+  const adults = searchParams.get('adults') ? parseInt(searchParams.get('adults')!, 10) : undefined;
+  const slug = searchParams.get('slug') || '';
 
   const roomTypesQuery = useMemo(() => (
     hotelId
@@ -21,9 +22,10 @@ function RoomsPageContent() {
           checkIn: checkIn || undefined,
           checkOut: checkOut || undefined,
           adults,
+          slug: slug || undefined,
         }
       : null
-  ), [hotelId, checkIn, checkOut, adults]);
+  ), [hotelId, checkIn, checkOut, adults, slug]);
 
   const { roomTypes, isLoading, error } = useRoomTypes(roomTypesQuery);
 
@@ -42,7 +44,8 @@ function RoomsPageContent() {
           hotelId={hotelId}
           initialCheckIn={checkIn}
           initialCheckOut={checkOut}
-          initialAdults={adults}
+          initialAdults={adults ?? 2}
+          initialSlug={slug}
         />
       </section>
 

@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, Select } from '@/components/ui';
 
 interface SearchFormProps {
   hotelId?: string;
   initialCheckIn?: string;
   initialCheckOut?: string;
   initialAdults?: number;
+  initialSlug?: string;
 }
 
 export function SearchForm({
@@ -16,20 +17,23 @@ export function SearchForm({
   initialCheckIn = '',
   initialCheckOut = '',
   initialAdults = 2,
+  initialSlug = '',
 }: SearchFormProps) {
   const router = useRouter();
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [adults, setAdults] = useState(initialAdults);
+  const [slug, setSlug] = useState(initialSlug);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
 
     const params = new URLSearchParams();
     if (hotelId) params.set('hotelId', hotelId);
-    params.set('checkIn', checkIn);
-    params.set('checkOut', checkOut);
+    if (checkIn) params.set('checkIn', checkIn);
+    if (checkOut) params.set('checkOut', checkOut);
     params.set('adults', adults.toString());
+    if (slug) params.set('slug', slug);
 
     router.push(`/rooms?${params.toString()}`);
   };
@@ -39,10 +43,17 @@ export function SearchForm({
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = tomorrow.toISOString().split('T')[0];
 
+  const roomTypeOptions = [
+    { value: '', label: 'Tất cả loại phòng' },
+    { value: 'phong-don', label: 'Phòng đơn' },
+    { value: 'phong-doi-giuong-don', label: 'Phòng đôi giường đơn' },
+    { value: 'phong-doi-giuong-kep', label: 'Phòng đôi giường kép' },
+  ];
+
   return (
     <form
       onSubmit={handleSearch}
-      className="grid grid-cols-1 gap-4 rounded-xl p-4 backdrop-blur-xl sm:grid-cols-2 lg:grid-cols-4"
+      className="grid grid-cols-1 gap-4 rounded-xl p-4 backdrop-blur-xl sm:grid-cols-2 lg:grid-cols-5"
       style={{
         background: 'rgba(242, 239, 233, 0.15)',
         boxShadow: '0 20px 40px rgba(27,58,75,0.2)',
@@ -55,7 +66,6 @@ export function SearchForm({
           value={checkIn}
           onChange={(e) => setCheckIn(e.target.value)}
           min={minDate}
-          required
         />
       </div>
       <div>
@@ -65,7 +75,6 @@ export function SearchForm({
           value={checkOut}
           onChange={(e) => setCheckOut(e.target.value)}
           min={checkIn || minDate}
-          required
         />
       </div>
       <div>
@@ -79,12 +88,20 @@ export function SearchForm({
           required
         />
       </div>
+      <div>
+        <Select
+          label="Loại phòng"
+          value={slug}
+          onChange={(e) => setSlug(e.target.value)}
+          options={roomTypeOptions}
+        />
+      </div>
       <div className="flex items-end">
         <Button
           type="submit"
           className="w-full bg-[var(--color-secondary)] font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)]"
         >
-          Check Availability
+          Tìm kiếm
         </Button>
       </div>
     </form>
