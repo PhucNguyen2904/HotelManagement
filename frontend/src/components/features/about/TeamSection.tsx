@@ -3,29 +3,29 @@
 import Image from 'next/image';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
-const TEAM_MEMBERS = [
-  {
-    name: 'Nguyễn Minh Anh',
-    role: 'Quản lý khách sạn',
-    bio: 'Tối ưu trải nghiệm lưu trú từ check-in đến check-out, tập trung vào sự chỉn chu và hài lòng của khách hàng.',
-    image:
-      'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: 'Trần Hoàng Nam',
-    role: 'Chăm sóc khách hàng',
-    bio: 'Luôn lắng nghe và hỗ trợ nhanh chóng, giúp mọi nhu cầu của khách được xử lý mượt mà, rõ ràng và thân thiện.',
-    image:
-      'https://images.unsplash.com/photo-1550525811-e5869dd03032?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: 'Lê Thu Hà',
-    role: 'Điều phối dịch vụ',
-    bio: 'Phối hợp đội ngũ buồng phòng và dịch vụ để đảm bảo tiêu chuẩn sạch đẹp, tiện nghi và sẵn sàng mỗi ngày.',
-    image:
-      'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80',
-  },
-] as const;
+// const TEAM_MEMBERS = [
+//   {
+//     name: 'Nguyễn Minh Anh',
+//     role: 'Quản lý khách sạn',
+//     bio: 'Tối ưu trải nghiệm lưu trú từ check-in đến check-out, tập trung vào sự chỉn chu và hài lòng của khách hàng.',
+//     image:
+//       'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=800&q=80',
+//   },
+//   {
+//     name: 'Trần Hoàng Nam',
+//     role: 'Chăm sóc khách hàng',
+//     bio: 'Luôn lắng nghe và hỗ trợ nhanh chóng, giúp mọi nhu cầu của khách được xử lý mượt mà, rõ ràng và thân thiện.',
+//     image:
+//       'https://images.unsplash.com/photo-1550525811-e5869dd03032?auto=format&fit=crop&w=800&q=80',
+//   },
+//   {
+//     name: 'Lê Thu Hà',
+//     role: 'Điều phối dịch vụ',
+//     bio: 'Phối hợp đội ngũ buồng phòng và dịch vụ để đảm bảo tiêu chuẩn sạch đẹp, tiện nghi và sẵn sàng mỗi ngày.',
+//     image:
+//       'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=800&q=80',
+//   },
+// ] as const;
 
 
 
@@ -44,9 +44,8 @@ export function TeamSection() {
         {/* Heading */}
         <div
           ref={refHeading}
-          className={`mx-auto mb-14 max-w-2xl text-center transition-all duration-700 ease-out ${
-            isHeadingVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-          }`}
+          className={`mx-auto mb-14 max-w-2xl text-center transition-all duration-700 ease-out ${isHeadingVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+            }`}
         >
           <span className="inline-block h-px w-12 bg-[var(--color-secondary)]" />
           <p className="mt-3 font-serif text-sm tracking-[0.25em] uppercase text-[var(--color-secondary)]">
@@ -70,56 +69,56 @@ export function TeamSection() {
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {TEAM_MEMBERS.map((member, index) => (
             <TeamCard key={member.name} member={member} index={index} />
           ))}
-        </div>
+        </div> */}
       </div>
     </section>
   );
 }
 
-function TeamCard({
-  member,
-  index,
-}: {
-  member: (typeof TEAM_MEMBERS)[number];
-  index: number;
-}) {
-  const [ref, isVisible] = useScrollAnimation();
+// function TeamCard({
+//   member,
+//   index,
+// }: {
+//   member: (typeof TEAM_MEMBERS)[number];
+//   index: number;
+// }) {
+//   const [ref, isVisible] = useScrollAnimation();
 
-  return (
-    <div
-      ref={ref}
-      className={`group overflow-hidden rounded-2xl bg-white editorial-shadow transition-all duration-700 ease-out hover:-translate-y-1 hover:shadow-xl ${
-        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-      }`}
-      style={{ transitionDelay: `${index * 150}ms` }}
-    >
-      {/* Photo */}
-      <div className="relative aspect-[4/5] overflow-hidden">
-        <Image
-          src={member.image}
-          alt={member.name}
-          fill
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-        {/* Gradient overlay at bottom */}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[rgba(27,58,75,0.75)] to-transparent" />
-        {/* Name overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <h3 className="font-serif text-2xl font-semibold text-white">{member.name}</h3>
-          <p className="mt-1 text-sm uppercase tracking-widest text-[var(--color-secondary)]">
-            {member.role}
-          </p>
-        </div>
-      </div>
-      {/* Bio */}
-      <div className="p-6">
-        <p className="text-sm leading-relaxed text-manor-muted">{member.bio}</p>
-      </div>
-    </div>
-  );
-}
+//   return (
+//     <div
+//       ref={ref}
+//       className={`group overflow-hidden rounded-2xl bg-white editorial-shadow transition-all duration-700 ease-out hover:-translate-y-1 hover:shadow-xl ${
+//         isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+//       }`}
+//       style={{ transitionDelay: `${index * 150}ms` }}
+//     >
+//       {/* Photo */}
+//       <div className="relative aspect-[4/5] overflow-hidden">
+//         <Image
+//           src={member.image}
+//           alt={member.name}
+//           fill
+//           className="object-cover transition-transform duration-700 group-hover:scale-105"
+//           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+//         />
+//         {/* Gradient overlay at bottom */}
+//         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[rgba(27,58,75,0.75)] to-transparent" />
+//         {/* Name overlay */}
+//         <div className="absolute bottom-0 left-0 right-0 p-6">
+//           <h3 className="font-serif text-2xl font-semibold text-white">{member.name}</h3>
+//           <p className="mt-1 text-sm uppercase tracking-widest text-[var(--color-secondary)]">
+//             {member.role}
+//           </p>
+//         </div>
+//       </div>
+//       {/* Bio */}
+//       <div className="p-6">
+//         <p className="text-sm leading-relaxed text-manor-muted">{member.bio}</p>
+//       </div>
+//     </div>
+//   );
+// }
