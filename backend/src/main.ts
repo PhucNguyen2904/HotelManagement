@@ -20,14 +20,13 @@ async function bootstrap() {
   app.use(helmet());
 
   // CORS
-  const productionOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',') 
-    : ['https://khachsannganha.com'];
-
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production'
-      ? productionOrigins
-      : true,
+    origin: [
+      'https://hotel-management-nine-gules.vercel.app',
+      'http://localhost:3000',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
 
