@@ -28,15 +28,7 @@ export class RoomTypesController {
     return this.roomTypesService.create(hotelId, dto);
   }
 
-  @Get()
-  @Public()
-  @ApiOperation({ summary: 'Get all room types for a hotel (public search)' })
-  @ApiQuery({ name: 'checkIn', required: false, example: '2026-04-16' })
-  @ApiQuery({ name: 'checkOut', required: false, example: '2026-04-17' })
-  @ApiQuery({ name: 'adults', required: false, type: Number, example: 2 })
-  findAll(@Param('hotelId') hotelId: string, @Query() query: RoomTypeQueryDto) {
-    return this.roomTypesService.findPublicByHotel(hotelId, query);
-  }
+
 
   @Get('by-slug/:slug')
   @Public()

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRoomTypes } from '@/hooks/useRoomTypes';
 import { RoomCard, SearchForm } from '@/components/features/rooms';
@@ -14,7 +14,7 @@ function RoomsPageContent() {
   const checkOut = searchParams.get('checkOut') || '';
   const adults = parseInt(searchParams.get('adults') || '2', 10);
 
-  const { roomTypes, isLoading, error } = useRoomTypes(
+  const roomTypesQuery = useMemo(() => (
     hotelId
       ? {
           hotelId,
@@ -22,8 +22,10 @@ function RoomsPageContent() {
           checkOut: checkOut || undefined,
           adults,
         }
-      : null,
-  );
+      : null
+  ), [hotelId, checkIn, checkOut, adults]);
+
+  const { roomTypes, isLoading, error } = useRoomTypes(roomTypesQuery);
 
   return (
     <div className="min-h-screen bg-[var(--color-accent)]">
