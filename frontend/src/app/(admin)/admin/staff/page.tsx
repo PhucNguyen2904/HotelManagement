@@ -52,6 +52,33 @@ export default function StaffManagementPage() {
     loadStaff();
   }, []);
 
+  const deactivateStaff = useCallback(async (id: string) => {
+    try {
+      await usersService.remove(id);
+      setStaff((prev) => prev.map((item) => (item.id === id ? { ...item, isActive: false } : item)));
+    } catch (error) {
+      console.error('Failed to deactivate staff user', error);
+    }
+  }, []);
+
+  const openEdit = useCallback(
+    (member: StaffUser) => {
+      const selected = staff.find((item) => item.id === member.id);
+      if (!selected) return;
+      setEditingStaff(selected);
+      setForm({
+        id: selected.id,
+        fullName: selected.fullName,
+        email: selected.email,
+        phone: selected.phone ?? '',
+        role: selected.role,
+        password: '',
+      });
+      setShowModal(true);
+    },
+    [staff]
+  );
+
   const columns: TableColumn<StaffUser>[] = useMemo(
     () => [
       {
@@ -95,23 +122,8 @@ export default function StaffManagementPage() {
         ),
       },
     ],
-    [staff]
+    [openEdit, deactivateStaff]
   );
-
-  const openEdit = (member: StaffUser) => {
-    const selected = staff.find((item) => item.id === member.id);
-    if (!selected) return;
-    setEditingStaff(selected);
-    setForm({
-      id: selected.id,
-      fullName: selected.fullName,
-      email: selected.email,
-      phone: selected.phone ?? '',
-      role: selected.role,
-      password: '',
-    });
-    setShowModal(true);
-  };
 
   const submitStaff = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -166,14 +178,6 @@ export default function StaffManagementPage() {
     setShowModal(false);
   };
 
-  const deactivateStaff = async (id: string) => {
-    try {
-      await usersService.remove(id);
-      setStaff((prev) => prev.map((item) => (item.id === id ? { ...item, isActive: false } : item)));
-    } catch (error) {
-      console.error('Failed to deactivate staff user', error);
-    }
-  };
 
   return (
     <div className="space-y-5">

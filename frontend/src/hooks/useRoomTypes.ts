@@ -24,7 +24,7 @@ export function useRoomTypes(query: RoomTypesQuery | null) {
     } finally {
       setIsLoading(false);
     }
-  }, [query?.hotelId, query?.checkIn, query?.checkOut, query?.adults]);
+  }, [query]);
 
   useEffect(() => {
     fetchRoomTypes();

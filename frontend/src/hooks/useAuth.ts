@@ -8,7 +8,7 @@ export function useAuth() {
 
   useEffect(() => {
     store.checkAuth();
-  }, []);
+  }, [store]);
 
   return store;
 }
