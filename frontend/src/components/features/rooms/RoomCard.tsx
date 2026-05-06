@@ -36,13 +36,13 @@ export function RoomCard({ room, checkIn, checkOut, hotelId }: RoomCardProps) {
     <Card className="group overflow-hidden rounded-xl bg-manor-surface-lowest transition-all hover:translate-y-[-2px]">
       {/* Image - click để xem chi tiết */}
       <Link href={detailUrl}>
-        <div className="relative aspect-[4/5] w-full cursor-pointer overflow-hidden">
+        <div className="relative aspect-[4/3] w-full cursor-pointer overflow-hidden">
           {imgSrc ? (
             <Image
               src={imgSrc}
               alt={room.name}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
               className="object-cover transition-transform duration-700 group-hover:scale-105"
               quality={100}
               priority

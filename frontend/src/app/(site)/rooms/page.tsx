@@ -111,7 +111,7 @@ function RoomsPageContent() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-x-12 gap-y-16 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-12 md:grid-cols-2 xl:grid-cols-3">
               {roomTypes.map((room) => (
                 <RoomCard
                   key={room.id}
