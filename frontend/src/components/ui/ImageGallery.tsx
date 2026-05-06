@@ -20,8 +20,12 @@ interface ImageGalleryProps {
 export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const currentImage = images?.[selectedIndex] || images?.[0];
+  const currentImageUrl = failedImages[currentImage?.id || ''] 
+    ? '/images/placeholder.jpg' 
+    : (currentImage?.url || '/images/placeholder.jpg');
 
   const handlePrevious = useCallback(() => {
     setSelectedIndex((prev) => (prev === 0 ? (images?.length || 1) - 1 : prev - 1));
@@ -40,10 +44,20 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
     [handlePrevious, handleNext],
   );
 
+  const handleImageError = (id: string) => {
+    setFailedImages((prev) => ({ ...prev, [id]: true }));
+  };
+
   if (!images || images.length === 0) {
     return (
       <div className={cn('relative w-full h-64 bg-gray-200 rounded-lg', className)}>
-        <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+        <Image
+          src="/images/placeholder.jpg"
+          alt="Không có ảnh"
+          fill
+          className="object-cover rounded-lg"
+        />
+        <div className="absolute inset-0 flex items-center justify-center text-white bg-black/20 backdrop-blur-sm rounded-lg">
           Không có ảnh
         </div>
       </div>
@@ -59,12 +73,13 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
           onClick={() => setIsLightboxOpen(true)}
         >
           <Image
-            src={currentImage.url}
+            src={currentImageUrl}
             alt={`${alt} - ${selectedIndex + 1}`}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
             className="object-cover transition-transform group-hover:scale-105"
             priority
+            onError={() => handleImageError(currentImage?.id || '')}
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           <div className="absolute bottom-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
@@ -100,26 +115,32 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
         {/* Thumbnails */}
         {images.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-2">
-            {images.map((image, index) => (
-              <button
-                key={image.id}
-                onClick={() => setSelectedIndex(index)}
-                className={cn(
-                  'relative w-20 h-16 flex-shrink-0 rounded-md overflow-hidden transition-all',
-                  index === selectedIndex
-                    ? 'ring-2 ring-blue-500 ring-offset-2'
-                    : 'opacity-70 hover:opacity-100',
-                )}
-              >
-                <Image
-                  src={image.url}
-                  alt={`${alt} thumbnail ${index + 1}`}
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                />
-              </button>
-            ))}
+            {images.map((image, index) => {
+              const isFailed = failedImages[image.id];
+              const thumbUrl = isFailed ? '/images/placeholder.jpg' : (image.url || '/images/placeholder.jpg');
+              
+              return (
+                <button
+                  key={image.id}
+                  onClick={() => setSelectedIndex(index)}
+                  className={cn(
+                    'relative w-20 h-16 flex-shrink-0 rounded-md overflow-hidden transition-all',
+                    index === selectedIndex
+                      ? 'ring-2 ring-blue-500 ring-offset-2'
+                      : 'opacity-70 hover:opacity-100',
+                  )}
+                >
+                  <Image
+                    src={thumbUrl}
+                    alt={`${alt} thumbnail ${index + 1}`}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                    onError={() => handleImageError(image.id)}
+                  />
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -145,11 +166,12 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={currentImage.url}
+              src={currentImageUrl}
               alt={`${alt} - ${selectedIndex + 1}`}
               fill
               sizes="90vw"
               className="object-contain"
+              onError={() => handleImageError(currentImage?.id || '')}
             />
 
             {images.length > 1 && (
@@ -180,3 +202,4 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
     </>
   );
 }
+

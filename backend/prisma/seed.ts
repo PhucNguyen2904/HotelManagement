@@ -134,7 +134,6 @@ async function main() {
       bedType: BedType.SINGLE,
       bedCount: 1,
       areaSize: 18,
-      sortOrder: 1,
     },
   });
   console.log(
@@ -161,7 +160,6 @@ async function main() {
       bedType: BedType.TWIN,
       bedCount: 2,
       areaSize: 25,
-      sortOrder: 2,
     },
   });
   console.log(
@@ -188,7 +186,6 @@ async function main() {
       bedType: BedType.DOUBLE,
       bedCount: 1,
       areaSize: 28,
-      sortOrder: 3,
     },
   });
   console.log(

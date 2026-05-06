@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { RoomType } from '@/types';
@@ -17,6 +18,9 @@ export function RoomCard({ room, checkIn, checkOut, hotelId }: RoomCardProps) {
   const amenities = Array.isArray(room.amenities) ? room.amenities : [];
   const primaryImage = images.find((img) => img.isPrimary) || images[0];
 
+  // State to handle image loading errors
+  const [imgSrc, setImgSrc] = useState(primaryImage?.url || '/images/placeholder.jpg');
+
   // Link đến trang chi tiết phòng với query params
   const detailUrl = hotelId
     ? `/rooms/${room.slug}?hotelId=${hotelId}`
@@ -33,17 +37,18 @@ export function RoomCard({ room, checkIn, checkOut, hotelId }: RoomCardProps) {
       {/* Image - click để xem chi tiết */}
       <Link href={detailUrl}>
         <div className="relative aspect-[4/5] w-full cursor-pointer overflow-hidden">
-          {primaryImage ? (
+          {imgSrc ? (
             <Image
-              src={primaryImage.url}
+              src={imgSrc}
               alt={room.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover transition-transform duration-700 group-hover:scale-105"
+              onError={() => setImgSrc('/images/placeholder.jpg')}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-slate-200">
-              <span className="text-slate-400">No image</span>
+              <span className="text-slate-400">Không có ảnh</span>
             </div>
           )}
           {room.availableRooms !== undefined && (
@@ -109,10 +114,11 @@ export function RoomCard({ room, checkIn, checkOut, hotelId }: RoomCardProps) {
             <span className="text-sm text-[var(--color-text)]/65">/đêm</span>
           </div>
           <Link href={bookingUrl}>
-            <Button size="sm">View Details</Button>
+            <Button size="sm">Xem chi tiết</Button>
           </Link>
         </div>
       </CardContent>
     </Card>
   );
 }
+

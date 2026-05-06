@@ -155,7 +155,7 @@ export default function RoomDetailPage() {
                 </div>
 
                 <Link href={`/booking?roomTypeId=${room.id}`}>
-                  <Button className="w-full py-4">Reserve Suite</Button>
+                  <Button className="w-full py-4">Đặt ngay</Button>
                 </Link>
 
                 <div className="mt-5 flex items-center justify-center gap-2 text-xs uppercase tracking-wider text-manor-muted">
