@@ -12,4 +12,12 @@ export class AppController {
   getHealth() {
     return { status: 'ok', timestamp: new Date().toISOString() };
   }
+
+  @Public()
+  @Get('health')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Specific /health endpoint' })
+  health() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
 }
