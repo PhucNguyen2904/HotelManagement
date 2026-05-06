@@ -26,6 +26,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
     "migrate:from-wp": "ts-node scripts/migrate.ts",
+    "preinstall": "rm -rf node_modules 2>/dev/null || true",
     "postinstall": "chmod +x node_modules/.bin/* 2>/dev/null || true"
   },
   "dependencies": {
