@@ -79,7 +79,8 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
             className="object-cover transition-transform group-hover:scale-105"
             priority
-            quality={90}
+            quality={100}
+            unoptimized={true}
             onError={() => handleImageError(currentImage?.id || '')}
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
@@ -137,6 +138,7 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
                     fill
                     sizes="80px"
                     className="object-cover"
+                    unoptimized={true}
                     onError={() => handleImageError(image.id)}
                   />
                 </button>
@@ -173,6 +175,7 @@ export function ImageGallery({ images, alt = 'Ảnh phòng', className }: ImageG
               sizes="90vw"
               className="object-contain"
               quality={100}
+              unoptimized={true}
               onError={() => handleImageError(currentImage?.id || '')}
             />
 
